@@ -16,33 +16,22 @@
             overflow: hidden; touch-action: none;
             height: 100dvh; width: 100vw;
             display: flex; flex-direction: column;
-            user-select: none;
+            user-select: none; /* Bloquea selección general */
         }
 
-        /* --- ANIMACIONES DE TRANSICIÓN (Zoom) --- */
-        .zoom-in { animation: zoomIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-        .zoom-out { animation: zoomOut 0.5s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards; }
-        
-        @keyframes zoomIn {
-            from { transform: scale(0.5); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-        @keyframes zoomOut {
-            from { transform: scale(1); opacity: 1; }
-            to { transform: scale(0.5); opacity: 0; }
-        }
-
-        /* --- FONDO --- */
+        /* --- FONDO (Z-INDEX BAJO PARA NO MOLESTAR) --- */
         .toon-bg {
-            position: absolute; inset: 0; z-index: 0;
+            position: absolute; inset: 0; z-index: -2;
             background: #5dbb63;
             background-image: radial-gradient(#6bcc70 15%, transparent 16%), radial-gradient(#4da852 15%, transparent 16%);
             background-size: 6vmin 6vmin; background-position: 0 0, 3vmin 3vmin;
+            pointer-events: none;
         }
         .river {
             position: absolute; top: 45%; left: -10%; width: 120%; height: 8vh;
             background: #4fc3f7; border-top: 0.5vh solid #000; border-bottom: 0.5vh solid #000;
-            transform: rotate(-2deg); z-index: 1; overflow: hidden;
+            transform: rotate(-2deg); z-index: -1; overflow: hidden;
+            pointer-events: none;
         }
         .river::after {
             content: ''; position: absolute; inset: 0;
@@ -54,26 +43,35 @@
         /* --- UI COMPONENTES --- */
         .toon-panel {
             background: white; border: 0.5vh solid black; border-radius: 3vh;
-            box-shadow: 1vh 1vh 0 rgba(0,0,0,0.3); padding: 2vh;
+            box-shadow: 1vh 1vh 0 rgba(0,0,0,0.5); padding: 3vh;
+            position: relative; z-index: 100; /* Siempre encima */
         }
+        
+        /* INPUTS ARREGLADOS */
         .toon-input {
             width: 100%; padding: 1.5vh; margin-bottom: 1.5vh;
             border: 0.4vh solid #333; border-radius: 1.5vh;
             font-family: sans-serif; font-weight: bold; font-size: 2vh;
-            outline: none; background: #f0f0f0;
+            outline: none; background: #f0f0f0; color: #000;
+            pointer-events: auto; /* IMPORTANTE */
+            user-select: text; /* IMPORTANTE */
+            -webkit-user-select: text;
         }
+        .toon-input:focus { border-color: #4facfe; background: white; }
+
         .toon-btn {
             position: relative; border: 0.5vh solid #000; border-radius: 2vh;
             transition: transform 0.1s; display: flex; flex-direction: column; 
             align-items: center; justify-content: center; cursor: pointer;
+            user-select: none;
         }
         .toon-btn:active { transform: translateY(0.5vh); box-shadow: none !important; }
+        
         .btn-red { background: #ff4757; box-shadow: 0 0.8vh 0 #c0392b; color: white; }
         .btn-blue { background: #2ed573; box-shadow: 0 0.8vh 0 #27ae60; color: white; }
         .btn-gold { background: #f1c40f; box-shadow: 0 0.8vh 0 #d4ac0d; color: #333; }
         .btn-purple { background: #5352ed; box-shadow: 0 0.8vh 0 #3742fa; color: white; }
-        
-        .toon-btn:disabled { filter: grayscale(1); opacity: 0.5; box-shadow: none; transform: translateY(0.5vh); }
+        .btn-gray { background: #e0e0e0; box-shadow: 0 0.8vh 0 #999; color: #555; }
 
         /* --- JUEGO --- */
         .hp-bar-container {
@@ -91,6 +89,13 @@
             font-size: 12vh; filter: drop-shadow(0.5vh 0.5vh 0 #000);
             transition: transform 0.1s; z-index: 10;
         }
+        
+        /* Animaciones */
+        .zoom-in { animation: zoomIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .zoom-out { animation: zoomOut 0.4s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards; }
+        @keyframes zoomIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes zoomOut { from { transform: scale(1); opacity: 1; } to { transform: scale(0.5); opacity: 0; } }
+        
         .hit-squash { animation: squash 0.3s; filter: brightness(2) hue-rotate(90deg) !important; }
         .stunned { filter: grayscale(1) blur(2px); animation: shake 0.5s infinite; }
         @keyframes squash { 0% { transform: scale(1, 1); } 30% { transform: scale(1.4, 0.6); } 60% { transform: scale(0.8, 1.2); } 100% { transform: scale(1, 1); } }
@@ -111,28 +116,62 @@
     <div class="toon-bg"></div>
     <div class="river"></div>
 
-    <!-- PANTALLA MENU -->
-    <div id="screen-menu" class="absolute inset-0 z-40 flex flex-col items-center justify-center p-4">
-        <!-- Zoom wrapper -->
-        <div id="menu-container" class="toon-panel w-full max-w-sm text-center transform -rotate-1 zoom-in">
-            <h1 class="text-6xl text-[#ff4757] -webkit-text-stroke-2 stroke-black mb-2 drop-shadow-md">CLASHY</h1>
+    <!-- PANTALLA LOGIN INICIAL (SOLO SI NO HAY SESIÓN) -->
+    <div id="screen-login" class="hidden absolute inset-0 z-50 flex flex-col items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div class="toon-panel w-full max-w-sm text-center transform rotate-1 zoom-in">
+            <h1 class="text-5xl text-[#ff4757] -webkit-text-stroke-2 stroke-black drop-shadow-md mb-4">CLASHY</h1>
             
-            <div class="bg-yellow-100 border-4 border-black rounded-2xl p-4 mb-6">
-                <div class="text-xs font-bold uppercase mb-1">TUS TROFEOS</div>
-                <div class="text-5xl">🏆 <span id="menu-trophies">0</span></div>
+            <!-- Tabs -->
+            <div class="flex mb-4 gap-2">
+                <button onclick="app.setTab('login')" id="tab-login" class="flex-1 py-2 font-bold border-b-4 border-blue-500 text-blue-500">INICIAR SESIÓN</button>
+                <button onclick="app.setTab('register')" id="tab-register" class="flex-1 py-2 font-bold border-b-4 border-transparent text-gray-400">CREAR CUENTA</button>
             </div>
 
-            <button onclick="game.start()" class="w-full toon-btn btn-red h-20 text-3xl font-black uppercase mb-4">
+            <div id="form-container">
+                <input type="text" id="inp-user" placeholder="Nombre de Usuario" class="toon-input">
+                <input type="password" id="inp-pass" placeholder="Contraseña" class="toon-input">
+                
+                <button id="btn-action" onclick="app.submitAuth()" class="toon-btn btn-blue w-full h-14 text-xl font-black uppercase mb-2">
+                    ENTRAR
+                </button>
+                
+                <div id="login-msg" class="text-red-500 font-sans text-sm font-bold min-h-[20px]"></div>
+            </div>
+            
+            <button onclick="app.playAsGuest()" class="mt-4 text-gray-500 font-bold underline text-sm">Jugar como Invitado</button>
+        </div>
+    </div>
+
+    <!-- PANTALLA MENU -->
+    <div id="screen-menu" class="absolute inset-0 z-40 flex flex-col items-center justify-center p-4">
+        <div id="menu-container" class="toon-panel w-full max-w-sm text-center transform -rotate-1 zoom-in">
+            <div class="flex justify-between items-center mb-4 border-b-2 border-gray-200 pb-2">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-blue-500 border-2 border-black flex items-center justify-center text-white text-xs">👤</div>
+                    <span id="menu-user" class="font-bold text-sm text-gray-700">Invitado</span>
+                </div>
+                <button onclick="app.logout()" class="text-xs bg-red-100 text-red-500 px-2 py-1 rounded font-bold border border-red-300">Salir</button>
+            </div>
+
+            <h1 class="text-6xl text-[#ff4757] -webkit-text-stroke-2 stroke-black mb-2 drop-shadow-md">CLASHY</h1>
+            
+            <div class="bg-yellow-100 border-4 border-black rounded-2xl p-4 mb-6 relative">
+                <div class="text-xs font-bold uppercase mb-1 text-yellow-800">TUS TROFEOS</div>
+                <div class="text-5xl drop-shadow-sm">🏆 <span id="menu-trophies">0</span></div>
+            </div>
+
+            <button onclick="game.start()" class="w-full toon-btn btn-red h-20 text-3xl font-black uppercase mb-4 shadow-xl">
                 ¡LUCHAR!
             </button>
             
-            <div id="auth-status" class="text-xs text-gray-500 font-bold">Modo Invitado (Local)</div>
+            <button onclick="app.showLeaderboard()" class="w-full toon-btn btn-gold h-14 text-xl font-black uppercase shadow-lg">
+                🏆 RANKING
+            </button>
         </div>
     </div>
 
     <!-- PANTALLA JUEGO -->
     <div id="screen-game" class="hidden absolute inset-0 z-10 flex flex-col h-full w-full">
-        <!-- Game content wrapper for zoom fx -->
         <div id="game-container" class="w-full h-full flex flex-col">
             <!-- RIVAL -->
             <div class="h-[40%] flex flex-col items-center justify-center relative">
@@ -194,7 +233,7 @@
         </div>
     </div>
 
-    <!-- MODAL FINAL PARTIDA -->
+    <!-- MODAL FINAL -->
     <div id="modal-end" class="hidden absolute inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
         <div class="toon-panel w-full max-w-sm text-center transform rotate-1 zoom-in">
             <h2 id="modal-title" class="text-5xl font-black mb-4 -webkit-text-stroke-2 stroke-black text-[#f1c40f]">¡VICTORIA!</h2>
@@ -206,27 +245,32 @@
         </div>
     </div>
 
-    <!-- MODAL LOGIN (SALE A LAS 3 PARTIDAS) -->
-    <div id="modal-login" class="hidden absolute inset-0 z-60 flex items-center justify-center bg-black/90 p-4">
+    <!-- MODAL POPUP LOGIN (3 PARTIDAS) -->
+    <div id="modal-popup-login" class="hidden absolute inset-0 z-60 flex items-center justify-center bg-black/90 p-4">
         <div class="toon-panel w-full max-w-sm text-center zoom-in relative">
-            <button onclick="app.skipLogin()" class="absolute top-2 right-4 text-gray-400 font-bold">X</button>
-            <h2 class="text-3xl text-[#5352ed] font-black mb-2">¡GUARDA TU PROGRESO!</h2>
-            <p class="text-sm text-gray-600 mb-6 font-bold">Llevas 3 partidas. Crea una cuenta para no perder tus copas y aparecer en el ranking.</p>
-            
-            <input type="text" id="inp-user" placeholder="Usuario" class="toon-input">
-            <input type="password" id="inp-pass" placeholder="Contraseña" class="toon-input">
-            
-            <button onclick="app.auth('register')" class="toon-btn btn-gold w-full h-14 text-xl font-black uppercase mb-2">CREAR CUENTA</button>
-            <button onclick="app.auth('login')" class="text-xs text-blue-500 font-bold underline">Ya tengo cuenta</button>
-            
-            <div id="login-msg" class="text-red-500 text-xs font-bold mt-2"></div>
+            <button onclick="app.skipPopup()" class="absolute top-2 right-4 text-gray-400 font-bold text-2xl">×</button>
+            <h2 class="text-3xl text-[#5352ed] font-black mb-2 stroke-black">¡PROTEGE TUS COPAS!</h2>
+            <p class="text-sm text-gray-600 mb-6 font-bold">Llevas 3 partidas. Crea una cuenta para no perder tu progreso.</p>
+            <button onclick="app.goToLoginScreen()" class="toon-btn btn-gold w-full h-14 text-xl font-black uppercase mb-2">CREAR CUENTA</button>
+            <button onclick="app.skipPopup()" class="text-xs text-gray-400 font-bold underline mt-2">Seguir como invitado</button>
+        </div>
+    </div>
+
+    <!-- PANTALLA RANKING -->
+    <div id="screen-ranking" class="hidden absolute inset-0 z-50 flex flex-col items-center justify-center p-4 bg-black/80">
+        <div class="toon-panel w-full max-w-sm text-center relative zoom-in">
+            <button onclick="document.getElementById('screen-ranking').classList.add('hidden')" class="absolute -top-4 -right-4 bg-red-500 text-white w-10 h-10 rounded-full border-2 border-black font-bold">X</button>
+            <h2 class="text-3xl text-[#f1c40f] -webkit-text-stroke-1 stroke-black mb-4 drop-shadow-md font-black">TOP MUNDIAL</h2>
+            <div id="ranking-list" class="bg-gray-100 rounded-xl h-64 overflow-y-auto text-left font-sans text-sm border-2 border-gray-300 p-2">
+                <div class="text-center text-gray-400 mt-10">Cargando...</div>
+            </div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBi5fQUumRe3zDb82mOcbl_m3JxP_9vVO4",
@@ -263,33 +307,78 @@
             }
         };
 
-        // --- LOGICA APP (Gestión de partidas y Auth) ---
+        // --- APP LOGIC ---
         window.app = {
             user: null,
             trophies: parseInt(localStorage.getItem('clashy_trophies') || 0),
             matchesPlayed: parseInt(localStorage.getItem('clashy_matches') || 0),
+            authMode: 'login',
 
-            skipLogin: () => {
-                document.getElementById('modal-login').classList.add('hidden');
+            setTab(mode) {
+                this.authMode = mode;
+                const btnL = document.getElementById('tab-login');
+                const btnR = document.getElementById('tab-register');
+                const btnAct = document.getElementById('btn-action');
+                
+                if(mode === 'login') {
+                    btnL.classList.add('border-blue-500', 'text-blue-500'); btnL.classList.remove('border-transparent', 'text-gray-400');
+                    btnR.classList.remove('border-blue-500', 'text-blue-500'); btnR.classList.add('border-transparent', 'text-gray-400');
+                    btnAct.innerText = "ENTRAR";
+                    btnAct.classList.remove('btn-purple'); btnAct.classList.add('btn-blue');
+                } else {
+                    btnR.classList.add('border-purple-500', 'text-purple-500'); btnR.classList.remove('border-transparent', 'text-gray-400');
+                    btnL.classList.remove('border-purple-500', 'text-purple-500'); btnL.classList.add('border-transparent', 'text-gray-400');
+                    btnAct.innerText = "CREAR CUENTA";
+                    btnAct.classList.remove('btn-blue'); btnAct.classList.add('btn-purple');
+                }
+            },
+
+            playAsGuest() {
+                document.getElementById('screen-login').classList.add('hidden');
+                document.getElementById('screen-menu').classList.remove('hidden');
+                game.init(); // Guest init
+            },
+
+            goToLoginScreen() {
+                document.getElementById('modal-popup-login').classList.add('hidden');
+                document.getElementById('screen-menu').classList.add('hidden');
+                document.getElementById('screen-login').classList.remove('hidden');
+            },
+
+            skipPopup() {
+                document.getElementById('modal-popup-login').classList.add('hidden');
                 game.toMenuActual();
             },
 
-            auth: async (type) => {
+            submitAuth: async () => {
                 const u = document.getElementById('inp-user').value;
                 const p = document.getElementById('inp-pass').value;
                 const m = document.getElementById('login-msg');
-                const email = u + "@clashygame.com";
+                const email = u.replace(/\s/g, '') + "@clashy.com";
 
                 if(!u || !p) { m.innerText = "Faltan datos"; return; }
+                m.innerText = "Procesando...";
+
                 try {
-                    if(type === 'login') await signInWithEmailAndPassword(auth, email, p);
-                    else {
+                    if(window.app.authMode === 'login') {
+                        await signInWithEmailAndPassword(auth, email, p);
+                    } else {
                         const c = await createUserWithEmailAndPassword(auth, email, p);
                         await setDoc(doc(db, "users", c.user.uid), { username: u, trophies: window.app.trophies });
                     }
-                    document.getElementById('modal-login').classList.add('hidden');
-                    game.toMenuActual(); // Refrescar menú con nuevo usuario
-                } catch(e) { m.innerText = "Error: " + e.code; }
+                    // Success is handled by observer
+                } catch(e) { 
+                    if(e.code === 'auth/email-already-in-use') m.innerText = "Ese usuario ya existe";
+                    else if(e.code === 'auth/wrong-password') m.innerText = "Contraseña incorrecta";
+                    else if(e.code === 'auth/user-not-found') m.innerText = "Usuario no encontrado";
+                    else m.innerText = "Error: " + e.code; 
+                }
+            },
+
+            logout: () => {
+                signOut(auth).then(() => {
+                    window.location.reload();
+                });
             },
 
             saveLocal: () => {
@@ -298,10 +387,33 @@
                 if(window.app.user) {
                     setDoc(doc(db, "users", window.app.user.uid), { trophies: window.app.trophies }, { merge: true });
                 }
+            },
+
+            showLeaderboard: async () => {
+                document.getElementById('screen-ranking').classList.remove('hidden');
+                const list = document.getElementById('ranking-list');
+                list.innerHTML = '<div class="text-center p-4">Cargando...</div>';
+                
+                try {
+                    const q = query(collection(db, "users"), orderBy("trophies", "desc"), limit(10));
+                    const querySnapshot = await getDocs(q);
+                    list.innerHTML = "";
+                    let rank = 1;
+                    querySnapshot.forEach((doc) => {
+                        const d = doc.data();
+                        const color = rank === 1 ? 'text-yellow-500' : (rank === 2 ? 'text-gray-400' : (rank === 3 ? 'text-orange-600' : 'text-gray-600'));
+                        list.innerHTML += `
+                            <div class="flex justify-between p-2 border-b border-gray-300 items-center">
+                                <span class="font-black ${color} w-8">#${rank++}</span>
+                                <span class="font-bold flex-1 text-gray-700">${d.username}</span>
+                                <span class="font-bold text-black">${d.trophies} 🏆</span>
+                            </div>`;
+                    });
+                } catch(e) { list.innerText = "Error al cargar"; }
             }
         };
 
-        // --- MOTOR DEL JUEGO ---
+        // --- GAME ENGINE ---
         window.game = {
             dom: null, state: null,
             
@@ -322,41 +434,46 @@
 
             updateMenuUI() {
                 document.getElementById('menu-trophies').innerText = window.app.trophies;
-                const status = window.app.user ? `👤 ${window.app.user.email.split('@')[0]}` : "Modo Invitado (Local)";
-                document.getElementById('auth-status').innerText = status;
+                const uLabel = document.getElementById('menu-user');
+                if(window.app.user) {
+                    // Fetch real username if possible, otherwise guest
+                    uLabel.innerText = "Conectado"; // Simplified for now
+                    getDoc(doc(db, "users", window.app.user.uid)).then(s => { if(s.exists()) uLabel.innerText = s.data().username; });
+                } else {
+                    uLabel.innerText = "Invitado";
+                }
                 
-                // Reset anims
                 this.dom.menuCont.classList.remove('zoom-out');
                 this.dom.menuCont.classList.add('zoom-in');
             },
 
             start() {
-                // ANIMACION SALIDA MENU
                 this.dom.menuCont.classList.remove('zoom-in');
                 this.dom.menuCont.classList.add('zoom-out');
 
                 setTimeout(() => {
                     this.dom.menu.classList.add('hidden');
                     this.dom.game.classList.remove('hidden');
-                    
-                    // ANIMACION ENTRADA JUEGO
                     this.dom.gameCont.classList.remove('zoom-out');
                     this.dom.gameCont.classList.add('zoom-in');
 
                     const t = window.app.trophies;
                     this.isTut = t === 0;
                     
+                    let eHP = 200, eDmg = 15;
+                    if(t > 100) { eHP = 300; eDmg = 25; }
+                    
                     this.state = {
                         active: true,
                         p: { hp: 300, max: 300, ammo: 0, shield: false, cd: 0, dmg: 25 },
-                        e: { hp: 300, max: 300, ammo: 0, shield: false, cd: 0, dmg: 20 }
+                        e: { hp: eHP, max: eHP, ammo: 0, shield: false, cd: 0, dmg: eDmg }
                     };
 
                     if(this.isTut) this.tutStep(1);
                     this.updateUI();
                     this.loops = setInterval(() => this.loop(), 50);
                     if(!this.isTut) this.aiInt = setInterval(() => this.ai(), 1000);
-                }, 500);
+                }, 400);
             },
 
             loop() {
@@ -370,20 +487,15 @@
                 const p = this.state.p; const e = this.state.e;
                 let act = 'reload';
 
-                // --- IA MEJORADA (NO ES TONTA) ---
+                // IA MEJORADA: No usa escudo sin balas
                 if (e.ammo === 0) {
-                    act = 'reload'; // PRIORIDAD ABSOLUTA: Si no tengo balas, recargo.
+                    act = 'reload';
                 } else {
-                    // Tengo balas. ¿Qué hace el jugador?
-                    if (p.ammo === 0 && e.ammo > 0) {
-                        act = 'attack'; // Jugador indefenso -> Atacar
-                    } else if (p.ammo > 0 && Math.random() < 0.4) {
-                        act = 'defend'; // A veces me defiendo si el jugador tiene balas
-                        this.emote('🛡️');
-                    } else {
-                        // Decisión estándar
-                        act = e.ammo < 3 ? 'reload' : 'attack';
+                    if (p.ammo === 0 && e.ammo > 0) act = 'attack';
+                    else if (p.ammo > 0 && Math.random() < 0.4 && e.ammo > 0) { // Check extra
+                        act = 'defend'; this.emote('🛡️');
                     }
+                    else act = e.ammo < 3 ? 'reload' : 'attack';
                 }
                 this.exec(false, act);
             },
@@ -406,14 +518,14 @@
 
             exec(isP, type) {
                 const actor = isP ? this.state.p : this.state.e;
-                const target = isP ? this.state.e : this.state.p;
+                const opp = isP ? this.state.e : this.state.p;
                 const sprite = isP ? this.dom.p.sprite : this.dom.e.sprite;
                 actor.cd = 500;
 
                 if(type === 'reload') {
                     if(actor.ammo < 3) { actor.ammo++; sprite.style.transform="scale(1.1)"; setTimeout(()=>sprite.style.transform="scale(1)", 100); }
                 } else if(type === 'defend') {
-                    if(actor.ammo > 0) { // Check extra de seguridad
+                    if(actor.ammo > 0) {
                         actor.ammo--; actor.shield = true; AudioSys.play('shield');
                         const s = isP ? this.dom.p.shield : this.dom.e.shield;
                         s.style.opacity = 1; s.style.transform = "scale(1.1)";
@@ -422,7 +534,7 @@
                 } else if(type === 'attack') {
                     actor.ammo--; AudioSys.play('shoot'); 
                     sprite.style.transform = `translateY(${isP?-30:30}px)`; setTimeout(()=>sprite.style.transform="translateY(0)", 150);
-                    setTimeout(() => this.hit(isP, target), 200);
+                    setTimeout(() => this.hit(isP, opp), 200);
                 }
                 this.updateUI();
             },
@@ -432,7 +544,7 @@
                 const ts = isP ? this.dom.e.sprite : this.dom.p.sprite;
                 if(t.shield) {
                     this.pop(ts, "¡BLOQUEO!", "#4facfe");
-                    if(isP) { // Stun al player
+                    if(isP) { // Stun
                         this.state.p.cd = 2000; this.dom.p.sprite.classList.add('stunned');
                         setTimeout(()=>this.dom.p.sprite.classList.remove('stunned'), 2000);
                     }
@@ -450,7 +562,6 @@
                 this.state.active = false;
                 clearInterval(this.loops); clearInterval(this.aiInt);
                 
-                // Zoom Out del Juego
                 this.dom.gameCont.classList.remove('zoom-in');
                 this.dom.gameCont.classList.add('zoom-out');
 
@@ -460,11 +571,10 @@
                 window.app.saveLocal();
 
                 setTimeout(() => {
-                    // Check if popup needed (3 matches & not logged in)
-                    if(window.app.matchesPlayed >= 3 && !window.app.user) {
-                        document.getElementById('modal-login').classList.remove('hidden');
+                    // Check popup condition
+                    if(window.app.matchesPlayed === 3 && !window.app.user) {
+                        document.getElementById('modal-popup-login').classList.remove('hidden');
                     } else {
-                        // Show normal end screen
                         document.getElementById('modal-title').innerText = win ? "¡VICTORIA!" : "DERROTA";
                         document.getElementById('modal-title').style.color = win ? "#f1c40f" : "#ff4757";
                         document.getElementById('trophy-change').innerText = (win?"+":"") + gain;
@@ -480,8 +590,7 @@
                 this.updateMenuUI();
             },
             
-            // Helper to handle popup close flow
-            toMenuActual() {
+            toMenuActual() { // Helper for popups
                 this.dom.game.classList.add('hidden');
                 this.dom.menu.classList.remove('hidden');
                 this.updateMenuUI();
@@ -502,8 +611,8 @@
             emote(t) { const e=this.dom.e.emote; e.innerText=t; e.classList.remove('hidden'); setTimeout(()=>e.classList.add('hidden'),1000); },
             updateUI() {
                 const p = this.state.p; const e = this.state.e;
-                this.dom.p.hp.style.width = (p.hp/p.max*100)+'%'; this.dom.p.txt.innerText = Math.ceil(p.hp/p.max*100)+'%';
-                this.dom.e.hp.style.width = (e.hp/e.max*100)+'%'; this.dom.e.txt.innerText = Math.ceil(e.hp/e.max*100)+'%';
+                this.dom.p.hp.style.width = Math.max(0,(p.hp/p.max*100))+'%'; this.dom.p.txt.innerText = Math.ceil(Math.max(0,p.hp/p.max*100))+'%';
+                this.dom.e.hp.style.width = Math.max(0,(e.hp/e.max*100))+'%'; this.dom.e.txt.innerText = Math.ceil(Math.max(0,e.hp/e.max*100))+'%';
                 [0,1,2].forEach(i => {
                     this.dom.p.dots[i].className = i<p.ammo?'dot filled':'dot'; this.dom.p.dots[i].style.background = i<p.ammo?'#2ed573':'#444';
                     this.dom.e.dots[i].className = i<e.ammo?'dot filled':'dot'; this.dom.e.dots[i].style.background = i<e.ammo?'#ff4757':'#444';
@@ -515,24 +624,3 @@
                 this.dom.btns.def.disabled = cd || am<1; this.dom.btns.def.style.opacity = (cd||am<1)?0.3:1;
                 this.dom.btns.rel.disabled = cd || am>=3; this.dom.btns.rel.style.opacity = (cd||am>=3)?0.3:1;
             }
-        };
-
-        // --- AUTH ---
-        onAuthStateChanged(auth, (u) => {
-            if(u) {
-                window.app.user = u;
-                // Merge local stats if any
-                getDoc(doc(db, "users", u.uid)).then(s => {
-                    if(s.exists()) window.app.trophies = Math.max(window.app.trophies, s.data().trophies);
-                    game.init();
-                });
-            } else {
-                game.init(); // Start guest mode
-            }
-        });
-        
-        // Init Audio on click
-        document.addEventListener('click', () => AudioSys.init(), {once:true});
-    </script>
-</body>
-</html>
