@@ -2,24 +2,34 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Clashy</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Clashy: Battle Arena</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Titan+One&display=swap" rel="stylesheet">
     
     <style>
         :root { --font-toon: 'Titan One', cursive; }
+        * { -webkit-tap-highlight-color: transparent; }
+        
         body {
             font-family: var(--font-toon);
             background-color: #1a1a1a;
             overflow: hidden; touch-action: none;
             height: 100dvh; width: 100vw;
             display: flex; flex-direction: column;
-            user-select: none; /* Bloquea selección general */
+            user-select: none;
         }
 
-        /* --- FONDO (Z-INDEX BAJO PARA NO MOLESTAR) --- */
+        /* CAPA DE CARGA (Para evitar errores de click antes de tiempo) */
+        #app-loader {
+            position: fixed; inset: 0; z-index: 9999;
+            background: #222; color: white;
+            display: flex; align-items: center; justify-content: center;
+            flex-direction: column; transition: opacity 0.5s;
+        }
+
+        /* --- FONDO --- */
         .toon-bg {
             position: absolute; inset: 0; z-index: -2;
             background: #5dbb63;
@@ -30,8 +40,7 @@
         .river {
             position: absolute; top: 45%; left: -10%; width: 120%; height: 8vh;
             background: #4fc3f7; border-top: 0.5vh solid #000; border-bottom: 0.5vh solid #000;
-            transform: rotate(-2deg); z-index: -1; overflow: hidden;
-            pointer-events: none;
+            transform: rotate(-2deg); z-index: -1; pointer-events: none;
         }
         .river::after {
             content: ''; position: absolute; inset: 0;
@@ -40,22 +49,19 @@
         }
         @keyframes flow { from { transform: translateX(0); } to { transform: translateX(4vh); } }
 
-        /* --- UI COMPONENTES --- */
+        /* --- UI --- */
         .toon-panel {
             background: white; border: 0.5vh solid black; border-radius: 3vh;
             box-shadow: 1vh 1vh 0 rgba(0,0,0,0.5); padding: 3vh;
-            position: relative; z-index: 100; /* Siempre encima */
+            position: relative; z-index: 10;
         }
         
-        /* INPUTS ARREGLADOS */
         .toon-input {
             width: 100%; padding: 1.5vh; margin-bottom: 1.5vh;
             border: 0.4vh solid #333; border-radius: 1.5vh;
             font-family: sans-serif; font-weight: bold; font-size: 2vh;
             outline: none; background: #f0f0f0; color: #000;
-            pointer-events: auto; /* IMPORTANTE */
-            user-select: text; /* IMPORTANTE */
-            -webkit-user-select: text;
+            pointer-events: auto; user-select: text; -webkit-user-select: text;
         }
         .toon-input:focus { border-color: #4facfe; background: white; }
 
@@ -66,14 +72,14 @@
             user-select: none;
         }
         .toon-btn:active { transform: translateY(0.5vh); box-shadow: none !important; }
+        .toon-btn:disabled { filter: grayscale(1); opacity: 0.5; box-shadow: none; transform: translateY(0.5vh); }
         
         .btn-red { background: #ff4757; box-shadow: 0 0.8vh 0 #c0392b; color: white; }
         .btn-blue { background: #2ed573; box-shadow: 0 0.8vh 0 #27ae60; color: white; }
         .btn-gold { background: #f1c40f; box-shadow: 0 0.8vh 0 #d4ac0d; color: #333; }
         .btn-purple { background: #5352ed; box-shadow: 0 0.8vh 0 #3742fa; color: white; }
-        .btn-gray { background: #e0e0e0; box-shadow: 0 0.8vh 0 #999; color: #555; }
 
-        /* --- JUEGO --- */
+        /* --- ELEMENTOS JUEGO --- */
         .hp-bar-container {
             height: 3vh; background: #333; border: 0.4vh solid #000; border-radius: 1.5vh;
             overflow: hidden; position: relative;
@@ -87,7 +93,7 @@
         
         .toon-char {
             font-size: 12vh; filter: drop-shadow(0.5vh 0.5vh 0 #000);
-            transition: transform 0.1s; z-index: 10;
+            transition: transform 0.1s; z-index: 5;
         }
         
         /* Animaciones */
@@ -113,18 +119,23 @@
 </head>
 <body>
 
+    <!-- CARGADOR -->
+    <div id="app-loader">
+        <h1 class="text-4xl animate-bounce mb-4 text-[#ff4757] -webkit-text-stroke-2 stroke-black">CLASHY</h1>
+        <div class="text-sm font-sans font-bold text-gray-400">Cargando sistema...</div>
+    </div>
+
     <div class="toon-bg"></div>
     <div class="river"></div>
 
-    <!-- PANTALLA LOGIN INICIAL (SOLO SI NO HAY SESIÓN) -->
-    <div id="screen-login" class="hidden absolute inset-0 z-50 flex flex-col items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <!-- PANTALLA LOGIN INICIAL -->
+    <div id="screen-login" class="hidden absolute inset-0 z-50 flex flex-col items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
         <div class="toon-panel w-full max-w-sm text-center transform rotate-1 zoom-in">
             <h1 class="text-5xl text-[#ff4757] -webkit-text-stroke-2 stroke-black drop-shadow-md mb-4">CLASHY</h1>
             
-            <!-- Tabs -->
             <div class="flex mb-4 gap-2">
-                <button onclick="app.setTab('login')" id="tab-login" class="flex-1 py-2 font-bold border-b-4 border-blue-500 text-blue-500">INICIAR SESIÓN</button>
-                <button onclick="app.setTab('register')" id="tab-register" class="flex-1 py-2 font-bold border-b-4 border-transparent text-gray-400">CREAR CUENTA</button>
+                <button onclick="app.setTab('login')" id="tab-login" class="flex-1 py-2 font-bold border-b-4 border-blue-500 text-blue-500">ENTRAR</button>
+                <button onclick="app.setTab('register')" id="tab-register" class="flex-1 py-2 font-bold border-b-4 border-transparent text-gray-400">CREAR</button>
             </div>
 
             <div id="form-container">
@@ -132,13 +143,13 @@
                 <input type="password" id="inp-pass" placeholder="Contraseña" class="toon-input">
                 
                 <button id="btn-action" onclick="app.submitAuth()" class="toon-btn btn-blue w-full h-14 text-xl font-black uppercase mb-2">
-                    ENTRAR
+                    INICIAR
                 </button>
                 
                 <div id="login-msg" class="text-red-500 font-sans text-sm font-bold min-h-[20px]"></div>
             </div>
             
-            <button onclick="app.playAsGuest()" class="mt-4 text-gray-500 font-bold underline text-sm">Jugar como Invitado</button>
+            <button onclick="app.playAsGuest()" class="mt-4 text-gray-500 font-bold underline text-sm cursor-pointer">Jugar como Invitado</button>
         </div>
     </div>
 
@@ -148,7 +159,7 @@
             <div class="flex justify-between items-center mb-4 border-b-2 border-gray-200 pb-2">
                 <div class="flex items-center gap-2">
                     <div class="w-8 h-8 rounded-full bg-blue-500 border-2 border-black flex items-center justify-center text-white text-xs">👤</div>
-                    <span id="menu-user" class="font-bold text-sm text-gray-700">Invitado</span>
+                    <span id="menu-user" class="font-bold text-sm text-gray-700">Cargando...</span>
                 </div>
                 <button onclick="app.logout()" class="text-xs bg-red-100 text-red-500 px-2 py-1 rounded font-bold border border-red-300">Salir</button>
             </div>
@@ -156,7 +167,7 @@
             <h1 class="text-6xl text-[#ff4757] -webkit-text-stroke-2 stroke-black mb-2 drop-shadow-md">CLASHY</h1>
             
             <div class="bg-yellow-100 border-4 border-black rounded-2xl p-4 mb-6 relative">
-                <div class="text-xs font-bold uppercase mb-1 text-yellow-800">TUS TROFEOS</div>
+                <div class="text-xs font-bold uppercase mb-1 text-yellow-800">TUS COPAS</div>
                 <div class="text-5xl drop-shadow-sm">🏆 <span id="menu-trophies">0</span></div>
             </div>
 
@@ -245,12 +256,12 @@
         </div>
     </div>
 
-    <!-- MODAL POPUP LOGIN (3 PARTIDAS) -->
+    <!-- POPUP LOGIN (3 PARTIDAS) -->
     <div id="modal-popup-login" class="hidden absolute inset-0 z-60 flex items-center justify-center bg-black/90 p-4">
         <div class="toon-panel w-full max-w-sm text-center zoom-in relative">
             <button onclick="app.skipPopup()" class="absolute top-2 right-4 text-gray-400 font-bold text-2xl">×</button>
-            <h2 class="text-3xl text-[#5352ed] font-black mb-2 stroke-black">¡PROTEGE TUS COPAS!</h2>
-            <p class="text-sm text-gray-600 mb-6 font-bold">Llevas 3 partidas. Crea una cuenta para no perder tu progreso.</p>
+            <h2 class="text-3xl text-[#5352ed] font-black mb-2 stroke-black">¡GUARDA TU PROGRESO!</h2>
+            <p class="text-sm text-gray-600 mb-6 font-bold">Llevas 3 partidas. Crea una cuenta para no perder tus copas.</p>
             <button onclick="app.goToLoginScreen()" class="toon-btn btn-gold w-full h-14 text-xl font-black uppercase mb-2">CREAR CUENTA</button>
             <button onclick="app.skipPopup()" class="text-xs text-gray-400 font-bold underline mt-2">Seguir como invitado</button>
         </div>
@@ -282,9 +293,12 @@
             measurementId: "G-6MMXY2SG4D"
         };
 
-        const fApp = initializeApp(firebaseConfig);
-        const auth = getAuth(fApp);
-        const db = getFirestore(fApp);
+        let fApp, auth, db;
+        try {
+            fApp = initializeApp(firebaseConfig);
+            auth = getAuth(fApp);
+            db = getFirestore(fApp);
+        } catch (e) { console.error("Firebase Error", e); }
 
         // --- AUDIO ---
         const AudioSys = {
@@ -319,24 +333,23 @@
                 const btnL = document.getElementById('tab-login');
                 const btnR = document.getElementById('tab-register');
                 const btnAct = document.getElementById('btn-action');
-                
                 if(mode === 'login') {
-                    btnL.classList.add('border-blue-500', 'text-blue-500'); btnL.classList.remove('border-transparent', 'text-gray-400');
-                    btnR.classList.remove('border-blue-500', 'text-blue-500'); btnR.classList.add('border-transparent', 'text-gray-400');
-                    btnAct.innerText = "ENTRAR";
-                    btnAct.classList.remove('btn-purple'); btnAct.classList.add('btn-blue');
+                    btnL.className = "flex-1 py-2 font-bold border-b-4 border-blue-500 text-blue-500";
+                    btnR.className = "flex-1 py-2 font-bold border-b-4 border-transparent text-gray-400";
+                    btnAct.innerText = "INICIAR";
+                    btnAct.classList.replace('btn-purple', 'btn-blue');
                 } else {
-                    btnR.classList.add('border-purple-500', 'text-purple-500'); btnR.classList.remove('border-transparent', 'text-gray-400');
-                    btnL.classList.remove('border-purple-500', 'text-purple-500'); btnL.classList.add('border-transparent', 'text-gray-400');
-                    btnAct.innerText = "CREAR CUENTA";
-                    btnAct.classList.remove('btn-blue'); btnAct.classList.add('btn-purple');
+                    btnR.className = "flex-1 py-2 font-bold border-b-4 border-purple-500 text-purple-500";
+                    btnL.className = "flex-1 py-2 font-bold border-b-4 border-transparent text-gray-400";
+                    btnAct.innerText = "CREAR";
+                    btnAct.classList.replace('btn-blue', 'btn-purple');
                 }
             },
 
             playAsGuest() {
                 document.getElementById('screen-login').classList.add('hidden');
                 document.getElementById('screen-menu').classList.remove('hidden');
-                game.init(); // Guest init
+                game.init();
             },
 
             goToLoginScreen() {
@@ -366,34 +379,26 @@
                         const c = await createUserWithEmailAndPassword(auth, email, p);
                         await setDoc(doc(db, "users", c.user.uid), { username: u, trophies: window.app.trophies });
                     }
-                    // Success is handled by observer
                 } catch(e) { 
-                    if(e.code === 'auth/email-already-in-use') m.innerText = "Ese usuario ya existe";
-                    else if(e.code === 'auth/wrong-password') m.innerText = "Contraseña incorrecta";
-                    else if(e.code === 'auth/user-not-found') m.innerText = "Usuario no encontrado";
+                    if(e.code === 'auth/email-already-in-use') m.innerText = "Usuario ya existe";
+                    else if(e.code === 'auth/wrong-password') m.innerText = "Contraseña mal";
+                    else if(e.code === 'auth/user-not-found') m.innerText = "Usuario no existe";
                     else m.innerText = "Error: " + e.code; 
                 }
             },
 
-            logout: () => {
-                signOut(auth).then(() => {
-                    window.location.reload();
-                });
-            },
+            logout: () => signOut(auth).then(() => window.location.reload()),
 
             saveLocal: () => {
                 localStorage.setItem('clashy_trophies', window.app.trophies);
                 localStorage.setItem('clashy_matches', window.app.matchesPlayed);
-                if(window.app.user) {
-                    setDoc(doc(db, "users", window.app.user.uid), { trophies: window.app.trophies }, { merge: true });
-                }
+                if(window.app.user) setDoc(doc(db, "users", window.app.user.uid), { trophies: window.app.trophies }, { merge: true });
             },
 
             showLeaderboard: async () => {
                 document.getElementById('screen-ranking').classList.remove('hidden');
                 const list = document.getElementById('ranking-list');
                 list.innerHTML = '<div class="text-center p-4">Cargando...</div>';
-                
                 try {
                     const q = query(collection(db, "users"), orderBy("trophies", "desc"), limit(10));
                     const querySnapshot = await getDocs(q);
@@ -401,7 +406,7 @@
                     let rank = 1;
                     querySnapshot.forEach((doc) => {
                         const d = doc.data();
-                        const color = rank === 1 ? 'text-yellow-500' : (rank === 2 ? 'text-gray-400' : (rank === 3 ? 'text-orange-600' : 'text-gray-600'));
+                        const color = rank === 1 ? 'text-yellow-500' : (rank === 2 ? 'text-gray-400' : 'text-gray-600');
                         list.innerHTML += `
                             <div class="flex justify-between p-2 border-b border-gray-300 items-center">
                                 <span class="font-black ${color} w-8">#${rank++}</span>
@@ -409,11 +414,11 @@
                                 <span class="font-bold text-black">${d.trophies} 🏆</span>
                             </div>`;
                     });
-                } catch(e) { list.innerText = "Error al cargar"; }
+                } catch(e) { list.innerText = "Ranking no disponible"; }
             }
         };
 
-        // --- GAME ENGINE ---
+        // --- MOTOR JUEGO ---
         window.game = {
             dom: null, state: null,
             
@@ -430,19 +435,20 @@
                     tut: document.getElementById('tutorial-hand')
                 };
                 this.updateMenuUI();
+                // Ocultar Loader
+                document.getElementById('app-loader').style.opacity = '0';
+                setTimeout(() => document.getElementById('app-loader').style.display = 'none', 500);
             },
 
             updateMenuUI() {
                 document.getElementById('menu-trophies').innerText = window.app.trophies;
                 const uLabel = document.getElementById('menu-user');
                 if(window.app.user) {
-                    // Fetch real username if possible, otherwise guest
-                    uLabel.innerText = "Conectado"; // Simplified for now
+                    uLabel.innerText = "Cargando...";
                     getDoc(doc(db, "users", window.app.user.uid)).then(s => { if(s.exists()) uLabel.innerText = s.data().username; });
                 } else {
                     uLabel.innerText = "Invitado";
                 }
-                
                 this.dom.menuCont.classList.remove('zoom-out');
                 this.dom.menuCont.classList.add('zoom-in');
             },
@@ -487,15 +493,17 @@
                 const p = this.state.p; const e = this.state.e;
                 let act = 'reload';
 
-                // IA MEJORADA: No usa escudo sin balas
+                // IA INTELIGENTE: Nunca usa escudo con 0 balas
                 if (e.ammo === 0) {
                     act = 'reload';
                 } else {
-                    if (p.ammo === 0 && e.ammo > 0) act = 'attack';
-                    else if (p.ammo > 0 && Math.random() < 0.4 && e.ammo > 0) { // Check extra
+                    // Tiene balas
+                    if (p.ammo === 0 && e.ammo > 0) act = 'attack'; // Jugador vulnerable
+                    else if (p.ammo > 0 && Math.random() < 0.4) {
                         act = 'defend'; this.emote('🛡️');
+                    } else {
+                        act = e.ammo < 3 ? 'reload' : 'attack';
                     }
-                    else act = e.ammo < 3 ? 'reload' : 'attack';
                 }
                 this.exec(false, act);
             },
@@ -571,7 +579,6 @@
                 window.app.saveLocal();
 
                 setTimeout(() => {
-                    // Check popup condition
                     if(window.app.matchesPlayed === 3 && !window.app.user) {
                         document.getElementById('modal-popup-login').classList.remove('hidden');
                     } else {
@@ -590,13 +597,12 @@
                 this.updateMenuUI();
             },
             
-            toMenuActual() { // Helper for popups
+            toMenuActual() {
                 this.dom.game.classList.add('hidden');
                 this.dom.menu.classList.remove('hidden');
                 this.updateMenuUI();
             },
 
-            // Utils
             tutStep(n) {
                 this.tutP = n; const h = this.dom.tut; h.classList.remove('hidden');
                 const r = [this.dom.btns.rel, this.dom.btns.atk, this.dom.btns.def][n-1].getBoundingClientRect();
@@ -624,3 +630,34 @@
                 this.dom.btns.def.disabled = cd || am<1; this.dom.btns.def.style.opacity = (cd||am<1)?0.3:1;
                 this.dom.btns.rel.disabled = cd || am>=3; this.dom.btns.rel.style.opacity = (cd||am>=3)?0.3:1;
             }
+        };
+
+        // --- INICIALIZACIÓN ---
+        // Se ejecuta al cargar Firebase
+        onAuthStateChanged(auth, (u) => {
+            if(u) {
+                window.app.user = u;
+                document.getElementById('screen-login').classList.add('hidden');
+                document.getElementById('screen-menu').classList.remove('hidden');
+                getDoc(doc(db, "users", u.uid)).then(s => {
+                    if(s.exists()) window.app.trophies = Math.max(window.app.trophies, s.data().trophies);
+                    game.init();
+                });
+            } else {
+                // Si no hay usuario y no estamos en el menú (primer load)
+                if(document.getElementById('screen-menu').classList.contains('hidden')) {
+                    document.getElementById('screen-login').classList.remove('hidden');
+                }
+                game.init();
+            }
+        });
+        
+        // Failsafe por si Firebase falla o tarda
+        setTimeout(() => {
+            if(!window.game.dom) game.init();
+        }, 1000);
+
+        document.addEventListener('click', () => AudioSys.init(), {once:true});
+    </script>
+</body>
+</html>
