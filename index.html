@@ -29,7 +29,6 @@
             flex-direction: column; transition: opacity 0.5s;
             pointer-events: auto;
         }
-        .loader-hidden { opacity: 0; pointer-events: none !important; }
 
         /* --- FONDO --- */
         .toon-bg {
@@ -65,6 +64,7 @@
             position: relative; border: 0.5vh solid #000; border-radius: 2vh;
             transition: transform 0.1s; display: flex; flex-direction: column; 
             align-items: center; justify-content: center; cursor: pointer;
+            user-select: none;
         }
         .toon-btn:active { transform: translateY(0.5vh); box-shadow: none !important; }
         .toon-btn:disabled { filter: grayscale(1); opacity: 0.5; box-shadow: none; transform: translateY(0.5vh); }
@@ -73,6 +73,7 @@
         .btn-blue { background: #2ed573; box-shadow: 0 0.8vh 0 #27ae60; color: white; }
         .btn-gold { background: #f1c40f; box-shadow: 0 0.8vh 0 #d4ac0d; color: #333; }
         .btn-purple { background: #5352ed; box-shadow: 0 0.8vh 0 #3742fa; color: white; }
+        .btn-gray { background: #95a5a6; box-shadow: 0 0.8vh 0 #7f8c8d; color: white; }
 
         /* --- SKINS --- */
         .skin-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1vh; max-height: 40vh; overflow-y: auto; }
@@ -132,7 +133,7 @@
 
     <div id="app-loader">
         <h1 class="text-4xl animate-bounce mb-4 text-[#ff4757] -webkit-text-stroke-2 stroke-black">CLASHY</h1>
-        <div id="loader-text" class="text-sm font-sans font-bold text-gray-400">Conectando...</div>
+        <div id="loader-txt" class="text-sm font-sans font-bold text-gray-400">Conectando Servidor...</div>
     </div>
 
     <div class="toon-bg"></div>
@@ -303,8 +304,8 @@
     <div id="modal-popup-login" class="hidden absolute inset-0 z-60 flex items-center justify-center bg-black/90 p-4">
         <div class="toon-panel w-full max-w-sm text-center zoom-in relative">
             <button onclick="app.skipPopup()" class="absolute top-2 right-4 text-gray-400 font-bold text-2xl">×</button>
-            <h2 class="text-3xl text-[#5352ed] font-black mb-2 stroke-black">¡GUARDA COPAS!</h2>
-            <p class="text-sm text-gray-600 mb-6 font-bold">Llevas 3 partidas. Crea una cuenta.</p>
+            <h2 class="text-3xl text-[#5352ed] font-black mb-2 stroke-black">¡GUARDA TUS COPAS!</h2>
+            <p class="text-sm text-gray-600 mb-6 font-bold">Llevas 3 partidas. Crea una cuenta para no perder tu progreso.</p>
             <button onclick="app.goToLoginScreen(true)" class="toon-btn btn-gold w-full h-14 text-xl font-black uppercase mb-2">CREAR CUENTA</button>
             <button onclick="app.skipPopup()" class="text-xs text-gray-400 font-bold underline mt-2">Seguir como invitado</button>
         </div>
@@ -326,8 +327,17 @@
         import { getAuth, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, collection, query, orderBy, limit, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'clashy-default';
+        // CONFIG FORCE
+        const firebaseConfig = {
+            apiKey: "AIzaSyBi5fQUumRe3zDb82mOcbl_m3JxP_9vVO4",
+            authDomain: "toon-acb19.firebaseapp.com",
+            projectId: "toon-acb19",
+            storageBucket: "toon-acb19.firebasestorage.app",
+            messagingSenderId: "627627273918",
+            appId: "1:627627273918:web:558d7b607d2b780c6e38ef",
+            measurementId: "G-JG4FRWR4DZ"
+        };
+        const appId = 'clashy-live-v1';
 
         let fApp, auth, db;
         try {
@@ -379,19 +389,22 @@
                     });
                 } else if(type === 'bgm') {
                     const now = this.ctx.currentTime;
-                    const o = this.ctx.createOscillator(); const g = this.ctx.createGain();
+                    const o = this.ctx.createOscillator();
+                    const g = this.ctx.createGain();
                     o.connect(g); g.connect(this.ctx.destination);
-                    o.type = 'triangle'; o.frequency.setValueAtTime(220, now);
+                    o.type = 'triangle';
+                    o.frequency.setValueAtTime(220, now);
                     o.frequency.exponentialRampToValueAtTime(440, now+0.1);
-                    g.gain.setValueAtTime(0.05, now); g.gain.linearRampToValueAtTime(0, now+0.2);
+                    g.gain.setValueAtTime(0.05, now);
+                    g.gain.linearRampToValueAtTime(0, now+0.2);
                     o.start(now); o.stop(now+0.2);
                 }
             }
         };
 
         window.app = {
-            user: null, // Firebase Auth user (Anonymous)
-            realUser: null, // Simulated user
+            user: null, // Anon firebase user
+            realUser: null, // Simulated user profile
             trophies: parseInt(localStorage.getItem('clashy_trophies') || 0),
             matchesPlayed: parseInt(localStorage.getItem('clashy_matches') || 0),
             currentSkin: localStorage.getItem('clashy_skin') || SKINS[0].icon,
@@ -411,45 +424,46 @@
                 }
             },
 
-            getUsersRef: () => collection(db, 'artifacts', appId, 'public', 'data', 'users'),
+            // --- USER DATA PATH ---
             getUserDoc: (username) => doc(db, 'artifacts', appId, 'public', 'data', 'users', username),
+            getUsersRef: () => collection(db, 'artifacts', appId, 'public', 'data', 'users'),
 
             submitAuth: async () => {
-                if (!window.app.user) return; 
+                if (!window.app.user) return; // Must have anon connection
                 const u = document.getElementById('inp-user').value.trim();
                 const p = document.getElementById('inp-pass').value.trim();
                 const m = document.getElementById('login-msg');
                 if(!u || !p) { m.innerText = "Faltan datos"; return; }
-                m.innerText = "Procesando...";
+                m.innerText = "Conectando...";
 
                 try {
                     const userRef = window.app.getUserDoc(u);
                     const snap = await getDoc(userRef);
 
                     if(window.app.authMode === 'login') {
-                        if(snap.exists() && snap.data().pass === p) {
-                            window.app.realUser = snap.data();
-                            window.app.trophies = snap.data().trophies;
-                            window.app.currentSkin = snap.data().skin || SKINS[0].icon;
-                            window.app.saveLocal();
-                            window.app.closeLogin();
-                            window.game.updateMenuUI();
-                        } else {
-                            m.innerText = "Error: Usuario/Pass";
-                        }
+                        if(snap.exists()) {
+                            if(snap.data().pass === p) {
+                                window.app.realUser = snap.data();
+                                window.app.trophies = snap.data().trophies;
+                                if(snap.data().skin) window.app.currentSkin = snap.data().skin;
+                                window.app.saveLocal();
+                                window.app.closeLogin();
+                                window.game.updateMenuUI();
+                            } else { m.innerText = "Contraseña incorrecta"; }
+                        } else { m.innerText = "Usuario no encontrado"; }
                     } else {
                         if(snap.exists()) {
-                            m.innerText = "El usuario ya existe";
+                            m.innerText = "Usuario ya existe";
                         } else {
-                            const newProfile = { username: u, pass: p, trophies: window.app.trophies, skin: window.app.currentSkin };
-                            await setDoc(userRef, newProfile);
-                            window.app.realUser = newProfile;
+                            const profile = { username: u, pass: p, trophies: window.app.trophies, skin: window.app.currentSkin };
+                            await setDoc(userRef, profile);
+                            window.app.realUser = profile;
                             window.app.saveLocal();
                             window.app.closeLogin();
                             window.game.updateMenuUI();
                         }
                     }
-                } catch(e) { m.innerText = "Error conexión"; console.error(e); }
+                } catch(e) { m.innerText = "Error de red"; console.error(e); }
             },
 
             logout: () => {
@@ -524,6 +538,7 @@
             },
             saveSkin: () => { window.app.saveLocal(); document.getElementById('modal-skins').classList.add('hidden'); document.getElementById('menu-avatar-display').innerText = window.app.currentSkin; },
 
+            // MULTIPLAYER (Matches Collection)
             showLobby: () => { document.getElementById('screen-lobby').classList.remove('hidden'); document.getElementById('create-room-code').value = Math.random().toString(36).substring(7).toUpperCase(); },
         };
 
@@ -579,7 +594,7 @@
                     btns: { atk: document.getElementById('btn-attack'), def: document.getElementById('btn-defend'), rel: document.getElementById('btn-reload') }
                 };
                 this.updateMenuUI();
-                const l = document.getElementById('app-loader'); l.classList.add('loader-hidden'); setTimeout(()=>l.style.display='none',500);
+                const l = document.getElementById('app-loader'); l.style.opacity='0'; setTimeout(()=>l.style.display='none',500);
             },
 
             updateMenuUI() {
@@ -687,7 +702,8 @@
                     this.pop(ts, "¡BLOQUEO!", "#4facfe");
                     const victim = isP ? this.state.p : this.state.e;
                     const vSprite = isP ? this.dom.p.sprite : this.dom.e.sprite;
-                    victim.cd = 1500; vSprite.classList.add('stunned'); setTimeout(()=>vSprite.classList.remove('stunned'), 1500);
+                    victim.cd = 1500; vSprite.classList.add('stunned');
+                    setTimeout(()=>vSprite.classList.remove('stunned'), 1500);
                 } else {
                     t.hp -= 20; AudioSys.play('hit');
                     ts.classList.add('hit-squash'); setTimeout(()=>ts.classList.remove('hit-squash'), 300);
@@ -727,8 +743,8 @@
             emote(t) { const e=this.dom.e.emote; e.innerText=t; e.classList.remove('hidden'); setTimeout(()=>e.classList.add('hidden'),1000); },
             updateUI() {
                 const p = this.state.p; const e = this.state.e;
-                this.dom.p.hp.style.width = Math.max(0,(p.hp/p.max*100))+'%'; this.dom.p.txt.innerText = p.hp;
-                this.dom.e.hp.style.width = Math.max(0,(e.hp/e.max*100))+'%'; this.dom.e.txt.innerText = e.hp;
+                this.dom.p.hp.style.width = Math.max(0,(p.hp/p.max*100))+'%'; this.dom.p.txt.innerText = Math.ceil(Math.max(0,p.hp/p.max*100))+'%';
+                this.dom.e.hp.style.width = Math.max(0,(e.hp/e.max*100))+'%'; this.dom.e.txt.innerText = Math.ceil(Math.max(0,e.hp/e.max*100))+'%';
                 [0,1,2].forEach(i => {
                     this.dom.p.dots[i].className = i<p.ammo?'dot filled':'dot'; this.dom.p.dots[i].style.background = i<p.ammo?'#2ed573':'#444';
                     this.dom.e.dots[i].className = i<e.ammo?'dot filled':'dot'; this.dom.e.dots[i].style.background = i<e.ammo?'#ff4757':'#444';
@@ -742,33 +758,33 @@
             }
         };
 
-        // --- AUTH INIT & TIMEOUT ---
-        // Safety timeout in case Firebase is blocked
+        // --- SAFE INIT ---
         setTimeout(() => {
             if(document.getElementById('app-loader').style.display !== 'none') {
-                console.log("Firebase timeout, starting offline...");
+                console.warn("Forcing init due to timeout");
+                document.getElementById('loader-txt').innerText = "Modo Offline...";
                 game.init();
             }
-        }, 3000);
+        }, 4000);
 
         signInAnonymously(auth).then(userCred => {
+            window.app.user = userCred.user;
             const savedUser = localStorage.getItem('clashy_user_session');
             if(savedUser) {
-                window.app.getUserDoc(savedUser);
-                getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', savedUser)).then(s => {
+                getDoc(window.app.getUserDoc(savedUser)).then(s => {
                     if(s.exists()) {
                         window.app.realUser = s.data();
                         window.app.trophies = s.data().trophies;
                         if(s.data().skin) window.app.currentSkin = s.data().skin;
                     }
                     game.init();
-                });
+                }).catch(() => game.init());
             } else {
                 game.init();
             }
         }).catch(e => {
-            console.error("Auth Error", e);
-            game.init(); // Fallback to guest
+            console.error("Auth Fail", e);
+            game.init();
         });
         
         document.addEventListener('click', () => AudioSys.init(), {once:true});
