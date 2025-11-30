@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Clash Brawlers: Online</title>
+    <title>Clashy</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Titan+One&display=swap" rel="stylesheet">
@@ -17,6 +17,19 @@
             height: 100dvh; width: 100vw;
             display: flex; flex-direction: column;
             user-select: none;
+        }
+
+        /* --- ANIMACIONES DE TRANSICIÓN (Zoom) --- */
+        .zoom-in { animation: zoomIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .zoom-out { animation: zoomOut 0.5s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards; }
+        
+        @keyframes zoomIn {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        @keyframes zoomOut {
+            from { transform: scale(1); opacity: 1; }
+            to { transform: scale(0.5); opacity: 0; }
         }
 
         /* --- FONDO --- */
@@ -49,8 +62,6 @@
             font-family: sans-serif; font-weight: bold; font-size: 2vh;
             outline: none; background: #f0f0f0;
         }
-        .toon-input:focus { border-color: #4facfe; background: white; }
-
         .toon-btn {
             position: relative; border: 0.5vh solid #000; border-radius: 2vh;
             transition: transform 0.1s; display: flex; flex-direction: column; 
@@ -61,6 +72,8 @@
         .btn-blue { background: #2ed573; box-shadow: 0 0.8vh 0 #27ae60; color: white; }
         .btn-gold { background: #f1c40f; box-shadow: 0 0.8vh 0 #d4ac0d; color: #333; }
         .btn-purple { background: #5352ed; box-shadow: 0 0.8vh 0 #3742fa; color: white; }
+        
+        .toon-btn:disabled { filter: grayscale(1); opacity: 0.5; box-shadow: none; transform: translateY(0.5vh); }
 
         /* --- JUEGO --- */
         .hp-bar-container {
@@ -91,12 +104,6 @@
         @keyframes popUp { 0% { transform: scale(0); opacity: 0; } 50% { transform: scale(1.5) translateY(-5vh); opacity: 1; } 100% { transform: scale(1) translateY(-10vh); opacity: 0; } }
 
         .hidden { display: none !important; }
-
-        /* --- RANKING TABLE --- */
-        .rank-row { display: flex; justify-content: space-between; padding: 1vh; border-bottom: 2px solid #eee; }
-        .rank-row:nth-child(1) { color: #f1c40f; font-weight: 900; }
-        .rank-row:nth-child(2) { color: #bdc3c7; }
-        .rank-row:nth-child(3) { color: #d35400; }
     </style>
 </head>
 <body>
@@ -104,33 +111,11 @@
     <div class="toon-bg"></div>
     <div class="river"></div>
 
-    <!-- PANTALLA LOGIN -->
-    <div id="screen-login" class="absolute inset-0 z-50 flex flex-col items-center justify-center p-4">
-        <div class="toon-panel w-full max-w-sm text-center transform rotate-1">
-            <h1 class="text-5xl text-[#ff4757] -webkit-text-stroke-2 stroke-black drop-shadow-md mb-6">CLASH<br>BRAWLERS</h1>
-            
-            <input type="text" id="inp-username" placeholder="Usuario" class="toon-input">
-            <input type="password" id="inp-password" placeholder="Contraseña" class="toon-input">
-            
-            <div class="grid grid-cols-2 gap-2 mt-4">
-                <button onclick="app.auth('login')" class="toon-btn btn-blue py-3 text-xl uppercase font-black">Entrar</button>
-                <button onclick="app.auth('register')" class="toon-btn btn-purple py-3 text-xl uppercase font-black">Crear</button>
-            </div>
-            <div id="login-msg" class="text-red-500 font-sans text-sm mt-2 font-bold h-4"></div>
-        </div>
-    </div>
-
     <!-- PANTALLA MENU -->
-    <div id="screen-menu" class="hidden absolute inset-0 z-40 flex flex-col items-center justify-center p-4">
-        <div class="absolute top-4 left-4 bg-white border-2 border-black px-4 py-2 rounded-full">
-            👤 <span id="menu-user" class="font-bold">Player</span>
-        </div>
-        <button onclick="app.logout()" class="absolute top-4 right-4 bg-red-500 text-white border-2 border-black px-4 py-2 rounded-full font-bold text-xs">
-            Salir
-        </button>
-
-        <div class="toon-panel w-full max-w-sm text-center transform -rotate-1">
-            <h2 class="text-4xl text-[#ff4757] stroke-black mb-4">MENU</h2>
+    <div id="screen-menu" class="absolute inset-0 z-40 flex flex-col items-center justify-center p-4">
+        <!-- Zoom wrapper -->
+        <div id="menu-container" class="toon-panel w-full max-w-sm text-center transform -rotate-1 zoom-in">
+            <h1 class="text-6xl text-[#ff4757] -webkit-text-stroke-2 stroke-black mb-2 drop-shadow-md">CLASHY</h1>
             
             <div class="bg-yellow-100 border-4 border-black rounded-2xl p-4 mb-6">
                 <div class="text-xs font-bold uppercase mb-1">TUS TROFEOS</div>
@@ -138,91 +123,80 @@
             </div>
 
             <button onclick="game.start()" class="w-full toon-btn btn-red h-20 text-3xl font-black uppercase mb-4">
-                ¡JUGAR!
+                ¡LUCHAR!
             </button>
             
-            <button onclick="app.showLeaderboard()" class="w-full toon-btn btn-gold h-14 text-xl font-black uppercase">
-                🏆 CLASIFICACIÓN
-            </button>
-        </div>
-    </div>
-
-    <!-- PANTALLA LEADERBOARD -->
-    <div id="screen-ranking" class="hidden absolute inset-0 z-50 flex flex-col items-center justify-center p-4 bg-black/80">
-        <div class="toon-panel w-full max-w-sm text-center relative">
-            <button onclick="app.hideLeaderboard()" class="absolute -top-4 -right-4 bg-red-500 text-white w-10 h-10 rounded-full border-2 border-black font-bold">X</button>
-            <h2 class="text-3xl text-[#f1c40f] stroke-black mb-4 drop-shadow-md">TOP MUNDIAL</h2>
-            <div id="ranking-list" class="bg-gray-100 rounded-xl h-64 overflow-y-auto text-left font-sans text-sm border-2 border-gray-300 p-2">
-                <!-- JS rellena esto -->
-                <div class="text-center text-gray-400 mt-10">Cargando...</div>
-            </div>
+            <div id="auth-status" class="text-xs text-gray-500 font-bold">Modo Invitado (Local)</div>
         </div>
     </div>
 
     <!-- PANTALLA JUEGO -->
     <div id="screen-game" class="hidden absolute inset-0 z-10 flex flex-col h-full w-full">
-        <!-- RIVAL -->
-        <div class="h-[40%] flex flex-col items-center justify-center relative">
-            <div class="w-[80%] max-w-md absolute top-4 z-20">
-                <div class="flex justify-between text-white font-black text-[2vh] mb-1 drop-shadow-md px-1">
-                    <span class="text-red-500 stroke-black" style="-webkit-text-stroke: 1px black;">RIVAL</span>
-                    <span id="e-hp-txt">100%</span>
+        <!-- Game content wrapper for zoom fx -->
+        <div id="game-container" class="w-full h-full flex flex-col">
+            <!-- RIVAL -->
+            <div class="h-[40%] flex flex-col items-center justify-center relative">
+                <div class="w-[80%] max-w-md absolute top-4 z-20">
+                    <div class="flex justify-between text-white font-black text-[2vh] mb-1 drop-shadow-md px-1">
+                        <span class="text-red-500 stroke-black" style="-webkit-text-stroke: 1px black;">RIVAL</span>
+                        <span id="e-hp-txt">100%</span>
+                    </div>
+                    <div class="hp-bar-container"><div id="e-hp-bar" class="hp-fill bg-[#ff4757]"></div></div>
+                    <div class="flex justify-center gap-2 mt-1">
+                        <div id="e-dot-1" class="dot bg-red-600"></div><div id="e-dot-2" class="dot bg-red-600"></div><div id="e-dot-3" class="dot bg-red-600"></div>
+                    </div>
                 </div>
-                <div class="hp-bar-container"><div id="e-hp-bar" class="hp-fill bg-[#ff4757]"></div></div>
-                <div class="flex justify-center gap-2 mt-1">
-                    <div id="e-dot-1" class="dot bg-red-600"></div><div id="e-dot-2" class="dot bg-red-600"></div><div id="e-dot-3" class="dot bg-red-600"></div>
-                </div>
-            </div>
-            <div class="relative mt-8">
-                <div id="e-sprite" class="toon-char scale-x-[-1]">👹</div>
-                <div id="e-emote" class="absolute -top-[5vh] -right-[5vh] bg-white border-4 border-black p-2 rounded-full hidden animate-bounce z-30 text-[4vh]">🛡️</div>
-                <div id="e-shield" class="absolute -inset-[2vh] border-[1vh] border-blue-400 rounded-full opacity-0 scale-75 transition-all"></div>
-            </div>
-        </div>
-
-        <!-- PLAYER -->
-        <div class="h-[60%] flex flex-col items-center justify-end pb-[safe-area-inset-bottom] relative">
-            <div id="status-msg" class="absolute top-10 text-white font-black text-[3vh] drop-shadow-md opacity-0 bg-black/50 px-4 rounded-full pointer-events-none"></div>
-            
-            <div class="relative mb-2">
-                <div id="p-sprite" class="toon-char">🤠</div>
-                <div id="p-shield" class="absolute -inset-[2vh] border-[1vh] border-blue-400 rounded-full opacity-0 scale-75 transition-all"></div>
-            </div>
-
-            <div class="w-[80%] max-w-md mb-4">
-                <div class="flex justify-between text-white font-black text-[2vh] mb-1 drop-shadow-md px-1">
-                    <span class="text-blue-400 stroke-black" style="-webkit-text-stroke: 1px black;">TÚ</span>
-                    <span id="p-hp-txt">100%</span>
-                </div>
-                <div class="hp-bar-container"><div id="p-hp-bar" class="hp-fill bg-[#2ed573]"></div></div>
-                <div class="flex justify-center gap-2 mt-1">
-                    <div id="p-dot-1" class="dot bg-[#2ed573]"></div><div id="p-dot-2" class="dot bg-[#2ed573]"></div><div id="p-dot-3" class="dot bg-[#2ed573]"></div>
+                <div class="relative mt-8">
+                    <div id="e-sprite" class="toon-char scale-x-[-1]">👹</div>
+                    <div id="e-emote" class="absolute -top-[5vh] -right-[5vh] bg-white border-4 border-black p-2 rounded-full hidden animate-bounce z-30 text-[4vh]">🛡️</div>
+                    <div id="e-shield" class="absolute -inset-[2vh] border-[1vh] border-blue-400 rounded-full opacity-0 scale-75 transition-all"></div>
                 </div>
             </div>
 
-            <div class="w-full px-4 pb-6 grid grid-cols-3 gap-3 h-[18vh] max-h-[160px] max-w-lg relative">
-                <div id="tutorial-hand" class="absolute hidden text-6xl drop-shadow-md z-50 animate-bounce pointer-events-none">👇</div>
+            <!-- PLAYER -->
+            <div class="h-[60%] flex flex-col items-center justify-end pb-[safe-area-inset-bottom] relative">
+                <div id="status-msg" class="absolute top-10 text-white font-black text-[3vh] drop-shadow-md opacity-0 bg-black/50 px-4 rounded-full pointer-events-none"></div>
                 
-                <button id="btn-reload" onclick="game.action('reload')" class="toon-btn btn-blue group">
-                    <i class="fas fa-bolt group-active:scale-90 transition-transform text-[4vh]"></i>
-                    <span class="font-black uppercase text-[1.5vh]">Cargar</span>
-                </button>
-                <button id="btn-defend" onclick="game.action('defend')" class="toon-btn btn-purple group">
-                    <i class="fas fa-shield-alt group-active:scale-90 transition-transform text-[4vh]"></i>
-                    <span class="font-black uppercase text-[1.5vh] text-xs">Escudo(1)</span>
-                </button>
-                <button id="btn-attack" onclick="game.action('attack')" class="toon-btn btn-red group z-20 transform -translate-y-[1vh]">
-                    <i class="fas fa-bomb text-[5vh] group-active:scale-90 transition-transform"></i>
-                    <span class="text-[2vh] font-black mt-1 uppercase">¡FUEGO!</span>
-                </button>
+                <div class="relative mb-2">
+                    <div id="p-sprite" class="toon-char">🤠</div>
+                    <div id="p-shield" class="absolute -inset-[2vh] border-[1vh] border-blue-400 rounded-full opacity-0 scale-75 transition-all"></div>
+                </div>
+
+                <div class="w-[80%] max-w-md mb-4">
+                    <div class="flex justify-between text-white font-black text-[2vh] mb-1 drop-shadow-md px-1">
+                        <span class="text-blue-400 stroke-black" style="-webkit-text-stroke: 1px black;">TÚ</span>
+                        <span id="p-hp-txt">100%</span>
+                    </div>
+                    <div class="hp-bar-container"><div id="p-hp-bar" class="hp-fill bg-[#2ed573]"></div></div>
+                    <div class="flex justify-center gap-2 mt-1">
+                        <div id="p-dot-1" class="dot bg-[#2ed573]"></div><div id="p-dot-2" class="dot bg-[#2ed573]"></div><div id="p-dot-3" class="dot bg-[#2ed573]"></div>
+                    </div>
+                </div>
+
+                <div class="w-full px-4 pb-6 grid grid-cols-3 gap-3 h-[18vh] max-h-[160px] max-w-lg relative">
+                    <div id="tutorial-hand" class="absolute hidden text-6xl drop-shadow-md z-50 animate-bounce pointer-events-none">👇</div>
+                    
+                    <button id="btn-reload" onclick="game.action('reload')" class="toon-btn btn-blue group">
+                        <i class="fas fa-bolt group-active:scale-90 transition-transform text-[4vh]"></i>
+                        <span class="font-black uppercase text-[1.5vh]">Cargar</span>
+                    </button>
+                    <button id="btn-defend" onclick="game.action('defend')" class="toon-btn btn-purple group">
+                        <i class="fas fa-shield-alt group-active:scale-90 transition-transform text-[4vh]"></i>
+                        <span class="font-black uppercase text-[1.5vh] text-xs">Escudo(1)</span>
+                    </button>
+                    <button id="btn-attack" onclick="game.action('attack')" class="toon-btn btn-red group z-20 transform -translate-y-[1vh]">
+                        <i class="fas fa-bomb text-[5vh] group-active:scale-90 transition-transform"></i>
+                        <span class="text-[2vh] font-black mt-1 uppercase">¡FUEGO!</span>
+                    </button>
+                </div>
             </div>
+            <div id="fx-layer" class="absolute inset-0 pointer-events-none overflow-hidden"></div>
         </div>
-        <div id="fx-layer" class="absolute inset-0 pointer-events-none overflow-hidden"></div>
     </div>
 
-    <!-- MODAL FINAL -->
-    <div id="modal" class="hidden absolute inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-        <div class="toon-panel w-full max-w-sm text-center transform rotate-1">
+    <!-- MODAL FINAL PARTIDA -->
+    <div id="modal-end" class="hidden absolute inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+        <div class="toon-panel w-full max-w-sm text-center transform rotate-1 zoom-in">
             <h2 id="modal-title" class="text-5xl font-black mb-4 -webkit-text-stroke-2 stroke-black text-[#f1c40f]">¡VICTORIA!</h2>
             <div class="flex justify-center items-center gap-4 mb-8">
                 <span class="text-6xl">🏆</span>
@@ -232,10 +206,27 @@
         </div>
     </div>
 
+    <!-- MODAL LOGIN (SALE A LAS 3 PARTIDAS) -->
+    <div id="modal-login" class="hidden absolute inset-0 z-60 flex items-center justify-center bg-black/90 p-4">
+        <div class="toon-panel w-full max-w-sm text-center zoom-in relative">
+            <button onclick="app.skipLogin()" class="absolute top-2 right-4 text-gray-400 font-bold">X</button>
+            <h2 class="text-3xl text-[#5352ed] font-black mb-2">¡GUARDA TU PROGRESO!</h2>
+            <p class="text-sm text-gray-600 mb-6 font-bold">Llevas 3 partidas. Crea una cuenta para no perder tus copas y aparecer en el ranking.</p>
+            
+            <input type="text" id="inp-user" placeholder="Usuario" class="toon-input">
+            <input type="password" id="inp-pass" placeholder="Contraseña" class="toon-input">
+            
+            <button onclick="app.auth('register')" class="toon-btn btn-gold w-full h-14 text-xl font-black uppercase mb-2">CREAR CUENTA</button>
+            <button onclick="app.auth('login')" class="text-xs text-blue-500 font-bold underline">Ya tengo cuenta</button>
+            
+            <div id="login-msg" class="text-red-500 text-xs font-bold mt-2"></div>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBi5fQUumRe3zDb82mOcbl_m3JxP_9vVO4",
@@ -247,11 +238,11 @@
             measurementId: "G-6MMXY2SG4D"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        const fApp = initializeApp(firebaseConfig);
+        const auth = getAuth(fApp);
+        const db = getFirestore(fApp);
 
-        // --- SISTEMA DE AUDIO (Música y FX) ---
+        // --- AUDIO ---
         const AudioSys = {
             ctx: null,
             init() { if(!this.ctx) this.ctx = new (window.AudioContext||window.webkitAudioContext)(); },
@@ -263,148 +254,109 @@
                 osc.connect(gain); gain.connect(this.ctx.destination);
 
                 if(type === 'hit') {
-                    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, t); osc.frequency.exponentialRampToValueAtTime(0.01, t+0.2);
-                    gain.gain.setValueAtTime(0.5, t); gain.gain.exponentialRampToValueAtTime(0.01, t+0.2);
-                    osc.start(t); osc.stop(t+0.2);
+                    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, t); gain.gain.setValueAtTime(0.5, t); gain.gain.exponentialRampToValueAtTime(0.01, t+0.2); osc.start(t); osc.stop(t+0.2);
                 } else if(type === 'shoot') {
-                    osc.type = 'square'; osc.frequency.setValueAtTime(300, t); osc.frequency.linearRampToValueAtTime(50, t+0.1);
-                    gain.gain.setValueAtTime(0.3, t); gain.gain.exponentialRampToValueAtTime(0.01, t+0.1);
-                    osc.start(t); osc.stop(t+0.1);
-                } else if(type === 'shield_hit') {
-                    osc.type = 'square'; osc.frequency.setValueAtTime(800, t); osc.frequency.exponentialRampToValueAtTime(100, t+0.3);
-                    gain.gain.setValueAtTime(0.5, t); gain.gain.exponentialRampToValueAtTime(0.01, t+0.3);
-                    osc.start(t); osc.stop(t+0.3);
-                } else if(type === 'win_music') {
-                    // Melodía simple: C4, E4, G4, C5
-                    const notes = [261.6, 329.6, 392.0, 523.2];
-                    notes.forEach((freq, i) => {
-                        const o = this.ctx.createOscillator();
-                        const g = this.ctx.createGain();
-                        o.connect(g); g.connect(this.ctx.destination);
-                        o.type = 'triangle';
-                        o.frequency.value = freq;
-                        const start = t + (i * 0.15);
-                        g.gain.setValueAtTime(0.2, start);
-                        g.gain.exponentialRampToValueAtTime(0.01, start + 0.3);
-                        o.start(start); o.stop(start + 0.3);
-                    });
+                    osc.type = 'square'; osc.frequency.setValueAtTime(300, t); osc.frequency.linearRampToValueAtTime(50, t+0.1); gain.gain.setValueAtTime(0.3, t); gain.gain.exponentialRampToValueAtTime(0.01, t+0.1); osc.start(t); osc.stop(t+0.1);
+                } else if(type === 'shield') {
+                    osc.type = 'sine'; osc.frequency.setValueAtTime(200, t); osc.frequency.linearRampToValueAtTime(600, t+0.3); gain.gain.setValueAtTime(0.3, t); osc.start(t); osc.stop(t+0.3);
                 }
             }
         };
 
-        // --- GESTIÓN DE APP Y FIREBASE ---
+        // --- LOGICA APP (Gestión de partidas y Auth) ---
         window.app = {
-            currentUser: null,
-            trophies: 0,
-            
+            user: null,
+            trophies: parseInt(localStorage.getItem('clashy_trophies') || 0),
+            matchesPlayed: parseInt(localStorage.getItem('clashy_matches') || 0),
+
+            skipLogin: () => {
+                document.getElementById('modal-login').classList.add('hidden');
+                game.toMenuActual();
+            },
+
             auth: async (type) => {
-                const user = document.getElementById('inp-username').value;
-                const pass = document.getElementById('inp-password').value;
-                const msg = document.getElementById('login-msg');
-                const email = user.toLowerCase() + "@game.com"; // Email falso para Auth
+                const u = document.getElementById('inp-user').value;
+                const p = document.getElementById('inp-pass').value;
+                const m = document.getElementById('login-msg');
+                const email = u + "@clashygame.com";
 
-                if(!user || !pass) { msg.innerText = "Rellena todo"; return; }
-
+                if(!u || !p) { m.innerText = "Faltan datos"; return; }
                 try {
-                    if(type === 'login') {
-                        await signInWithEmailAndPassword(auth, email, pass);
-                    } else {
-                        const cred = await createUserWithEmailAndPassword(auth, email, pass);
-                        // Crear perfil inicial
-                        await setDoc(doc(db, "users", cred.user.uid), {
-                            username: user,
-                            trophies: 0
-                        });
+                    if(type === 'login') await signInWithEmailAndPassword(auth, email, p);
+                    else {
+                        const c = await createUserWithEmailAndPassword(auth, email, p);
+                        await setDoc(doc(db, "users", c.user.uid), { username: u, trophies: window.app.trophies });
                     }
-                } catch(e) {
-                    msg.innerText = "Error: " + e.message.replace("Firebase: ", "");
+                    document.getElementById('modal-login').classList.add('hidden');
+                    game.toMenuActual(); // Refrescar menú con nuevo usuario
+                } catch(e) { m.innerText = "Error: " + e.code; }
+            },
+
+            saveLocal: () => {
+                localStorage.setItem('clashy_trophies', window.app.trophies);
+                localStorage.setItem('clashy_matches', window.app.matchesPlayed);
+                if(window.app.user) {
+                    setDoc(doc(db, "users", window.app.user.uid), { trophies: window.app.trophies }, { merge: true });
                 }
-            },
-
-            logout: () => signOut(auth),
-
-            loadUserData: async (uid) => {
-                const snap = await getDoc(doc(db, "users", uid));
-                if(snap.exists()) {
-                    window.app.trophies = snap.data().trophies;
-                    document.getElementById('menu-trophies').innerText = window.app.trophies;
-                    document.getElementById('menu-user').innerText = snap.data().username;
-                }
-            },
-
-            saveProgress: async () => {
-                if(window.app.currentUser) {
-                    await setDoc(doc(db, "users", window.app.currentUser.uid), {
-                        trophies: window.app.trophies
-                    }, { merge: true });
-                }
-            },
-
-            showLeaderboard: async () => {
-                document.getElementById('screen-ranking').classList.remove('hidden');
-                const list = document.getElementById('ranking-list');
-                list.innerHTML = '<div class="text-center p-4">Cargando...</div>';
-                
-                try {
-                    const q = query(collection(db, "users"), orderBy("trophies", "desc"), limit(10));
-                    const querySnapshot = await getDocs(q);
-                    list.innerHTML = "";
-                    let rank = 1;
-                    querySnapshot.forEach((doc) => {
-                        const d = doc.data();
-                        list.innerHTML += `
-                            <div class="rank-row">
-                                <span>#${rank++}</span>
-                                <span>${d.username}</span>
-                                <span>${d.trophies} 🏆</span>
-                            </div>`;
-                    });
-                } catch(e) { list.innerText = "Error al cargar"; }
-            },
-
-            hideLeaderboard: () => document.getElementById('screen-ranking').classList.add('hidden')
+            }
         };
 
-        // --- LÓGICA DEL JUEGO ---
+        // --- MOTOR DEL JUEGO ---
         window.game = {
-            dom: null, state: null, 
+            dom: null, state: null,
             
             init() {
                 this.dom = {
                     menu: document.getElementById('screen-menu'),
+                    menuCont: document.getElementById('menu-container'),
                     game: document.getElementById('screen-game'),
-                    modal: document.getElementById('modal'),
+                    gameCont: document.getElementById('game-container'),
+                    modalEnd: document.getElementById('modal-end'),
                     p: { hp: document.getElementById('p-hp-bar'), txt: document.getElementById('p-hp-txt'), sprite: document.getElementById('p-sprite'), dots: [1,2,3].map(i=>document.getElementById(`p-dot-${i}`)), shield: document.getElementById('p-shield') },
                     e: { hp: document.getElementById('e-hp-bar'), txt: document.getElementById('e-hp-txt'), sprite: document.getElementById('e-sprite'), dots: [1,2,3].map(i=>document.getElementById(`e-dot-${i}`)), shield: document.getElementById('e-shield'), emote: document.getElementById('e-emote') },
                     btns: { atk: document.getElementById('btn-attack'), def: document.getElementById('btn-defend'), rel: document.getElementById('btn-reload') },
-                    msg: document.getElementById('status-msg'),
-                    tutHand: document.getElementById('tutorial-hand')
+                    tut: document.getElementById('tutorial-hand')
                 };
+                this.updateMenuUI();
+            },
+
+            updateMenuUI() {
+                document.getElementById('menu-trophies').innerText = window.app.trophies;
+                const status = window.app.user ? `👤 ${window.app.user.email.split('@')[0]}` : "Modo Invitado (Local)";
+                document.getElementById('auth-status').innerText = status;
+                
+                // Reset anims
+                this.dom.menuCont.classList.remove('zoom-out');
+                this.dom.menuCont.classList.add('zoom-in');
             },
 
             start() {
-                this.dom.menu.classList.add('hidden');
-                this.dom.modal.classList.add('hidden');
-                this.dom.game.classList.remove('hidden');
-                
-                // Config dificultad
-                const trophies = window.app.trophies;
-                let eHP=200, eDmg=15, aiSpeed=1200;
-                this.isTut = trophies === 0;
+                // ANIMACION SALIDA MENU
+                this.dom.menuCont.classList.remove('zoom-in');
+                this.dom.menuCont.classList.add('zoom-out');
 
-                if(this.isTut) { eHP=100; eDmg=5; aiSpeed=2000; this.tutStep(1); }
-                else if(trophies > 150) { eHP=350; eDmg=25; aiSpeed=600; }
-                else { eHP=250; eDmg=20; aiSpeed=1000; }
+                setTimeout(() => {
+                    this.dom.menu.classList.add('hidden');
+                    this.dom.game.classList.remove('hidden');
+                    
+                    // ANIMACION ENTRADA JUEGO
+                    this.dom.gameCont.classList.remove('zoom-out');
+                    this.dom.gameCont.classList.add('zoom-in');
 
-                this.state = {
-                    active: true,
-                    p: { hp: 300, max: 300, ammo: 0, shield: false, cd: 0, dmg: 25 },
-                    e: { hp: eHP, max: eHP, ammo: 0, shield: false, cd: 0, dmg: eDmg }
-                };
+                    const t = window.app.trophies;
+                    this.isTut = t === 0;
+                    
+                    this.state = {
+                        active: true,
+                        p: { hp: 300, max: 300, ammo: 0, shield: false, cd: 0, dmg: 25 },
+                        e: { hp: 300, max: 300, ammo: 0, shield: false, cd: 0, dmg: 20 }
+                    };
 
-                this.updateUI();
-                this.loops = setInterval(() => this.loop(), 50);
-                if(!this.isTut) this.aiInt = setInterval(() => this.ai(), aiSpeed);
+                    if(this.isTut) this.tutStep(1);
+                    this.updateUI();
+                    this.loops = setInterval(() => this.loop(), 50);
+                    if(!this.isTut) this.aiInt = setInterval(() => this.ai(), 1000);
+                }, 500);
             },
 
             loop() {
@@ -418,74 +370,78 @@
                 const p = this.state.p; const e = this.state.e;
                 let act = 'reload';
 
-                // IA ANTI-SPAM
-                if(p.ammo > 0 && Math.random() < 0.6) { act = 'defend'; this.emote('🛡️'); }
-                else if(p.ammo === 0 && e.ammo > 0) act = 'attack';
-                else act = e.ammo < 3 ? 'reload' : 'attack';
-
+                // --- IA MEJORADA (NO ES TONTA) ---
+                if (e.ammo === 0) {
+                    act = 'reload'; // PRIORIDAD ABSOLUTA: Si no tengo balas, recargo.
+                } else {
+                    // Tengo balas. ¿Qué hace el jugador?
+                    if (p.ammo === 0 && e.ammo > 0) {
+                        act = 'attack'; // Jugador indefenso -> Atacar
+                    } else if (p.ammo > 0 && Math.random() < 0.4) {
+                        act = 'defend'; // A veces me defiendo si el jugador tiene balas
+                        this.emote('🛡️');
+                    } else {
+                        // Decisión estándar
+                        act = e.ammo < 3 ? 'reload' : 'attack';
+                    }
+                }
                 this.exec(false, act);
             },
 
             action(type) {
                 if(!this.state.active || this.state.p.cd > 0) return;
-                
-                // Reglas Tutorial
-                if(this.isTut) {
-                   if(this.tutPhase === 1 && type !== 'reload') return;
-                   if(this.tutPhase === 2 && type !== 'attack') return;
-                }
+                if(this.isTut && ((this.tutP===1 && type!=='reload') || (this.tutP===2 && type!=='attack'))) return;
 
-                if(type === 'attack' && this.state.p.ammo < 1) return;
-                if(type === 'reload' && this.state.p.ammo >= 3) return;
-                if(type === 'defend' && this.state.p.ammo < 1) return;
+                if(type==='attack' && this.state.p.ammo<1) return;
+                if(type==='reload' && this.state.p.ammo>=3) return;
+                if(type==='defend' && this.state.p.ammo<1) return;
 
                 this.exec(true, type);
 
                 if(this.isTut) {
-                    if(this.tutPhase === 1) this.tutStep(2);
-                    else if(this.tutPhase === 2) this.tutStep(3);
+                    if(this.tutP===1) this.tutStep(2);
+                    else if(this.tutP===2) this.tutStep(3);
                 }
             },
 
             exec(isP, type) {
                 const actor = isP ? this.state.p : this.state.e;
-                const opp = isP ? this.state.e : this.state.p;
+                const target = isP ? this.state.e : this.state.p;
                 const sprite = isP ? this.dom.p.sprite : this.dom.e.sprite;
                 actor.cd = 500;
 
                 if(type === 'reload') {
-                    if(actor.ammo < 3) { actor.ammo++; this.anim(sprite, 'scale'); }
+                    if(actor.ammo < 3) { actor.ammo++; sprite.style.transform="scale(1.1)"; setTimeout(()=>sprite.style.transform="scale(1)", 100); }
                 } else if(type === 'defend') {
-                    actor.ammo--; actor.shield = true;
-                    const s = isP ? this.dom.p.shield : this.dom.e.shield;
-                    s.style.opacity = 1; s.style.transform = "scale(1.1)";
-                    setTimeout(() => { if(this.state.active) { actor.shield = false; s.style.opacity = 0; s.style.transform = "scale(0.75)"; }}, 800);
+                    if(actor.ammo > 0) { // Check extra de seguridad
+                        actor.ammo--; actor.shield = true; AudioSys.play('shield');
+                        const s = isP ? this.dom.p.shield : this.dom.e.shield;
+                        s.style.opacity = 1; s.style.transform = "scale(1.1)";
+                        setTimeout(() => { if(this.state.active) { actor.shield = false; s.style.opacity = 0; s.style.transform = "scale(0.75)"; }}, 800);
+                    }
                 } else if(type === 'attack') {
-                    actor.ammo--; AudioSys.play('shoot'); this.anim(sprite, 'jump');
-                    setTimeout(() => this.hit(isP, opp), 200);
+                    actor.ammo--; AudioSys.play('shoot'); 
+                    sprite.style.transform = `translateY(${isP?-30:30}px)`; setTimeout(()=>sprite.style.transform="translateY(0)", 150);
+                    setTimeout(() => this.hit(isP, target), 200);
                 }
                 this.updateUI();
             },
 
-            hit(isP, target) {
+            hit(isP, t) {
                 if(!this.state.active) return;
                 const ts = isP ? this.dom.e.sprite : this.dom.p.sprite;
-                
-                if(target.shield) {
-                    AudioSys.play('shield_hit');
-                    this.popText(ts, "¡BLOQUEO!", "#4facfe");
-                    if(isP) { // Stun al jugador si golpea escudo
-                        this.state.p.cd = 2000;
-                        this.dom.p.sprite.classList.add('stunned');
-                        this.dom.msg.innerText = "¡ATURDIDO!"; this.dom.msg.style.opacity = 1;
-                        setTimeout(() => { this.dom.p.sprite.classList.remove('stunned'); this.dom.msg.style.opacity=0; }, 2000);
+                if(t.shield) {
+                    this.pop(ts, "¡BLOQUEO!", "#4facfe");
+                    if(isP) { // Stun al player
+                        this.state.p.cd = 2000; this.dom.p.sprite.classList.add('stunned');
+                        setTimeout(()=>this.dom.p.sprite.classList.remove('stunned'), 2000);
                     }
                 } else {
                     const dmg = isP ? this.state.p.dmg : this.state.e.dmg;
-                    target.hp -= dmg; AudioSys.play('hit');
+                    t.hp -= dmg; AudioSys.play('hit');
                     ts.classList.add('hit-squash'); setTimeout(()=>ts.classList.remove('hit-squash'), 300);
-                    this.popText(ts, `-${dmg}`, "#ff4757");
-                    if(target.hp <= 0) this.end(isP);
+                    this.pop(ts, `-${dmg}`, "#ff4757");
+                    if(t.hp <= 0) this.end(isP);
                 }
                 this.updateUI();
             },
@@ -494,85 +450,89 @@
                 this.state.active = false;
                 clearInterval(this.loops); clearInterval(this.aiInt);
                 
+                // Zoom Out del Juego
+                this.dom.gameCont.classList.remove('zoom-in');
+                this.dom.gameCont.classList.add('zoom-out');
+
                 const gain = win ? 20 : -10;
                 window.app.trophies = Math.max(0, window.app.trophies + gain);
-                window.app.saveProgress();
-
-                if(win) AudioSys.play('win_music');
+                window.app.matchesPlayed++;
+                window.app.saveLocal();
 
                 setTimeout(() => {
-                    document.getElementById('modal-title').innerText = win ? "¡VICTORIA!" : "DERROTA";
-                    document.getElementById('modal-title').style.color = win ? "#f1c40f" : "#ff4757";
-                    document.getElementById('trophy-change').innerText = (win?"+":"") + gain;
-                    this.dom.modal.classList.remove('hidden');
-                }, 1000);
+                    // Check if popup needed (3 matches & not logged in)
+                    if(window.app.matchesPlayed >= 3 && !window.app.user) {
+                        document.getElementById('modal-login').classList.remove('hidden');
+                    } else {
+                        // Show normal end screen
+                        document.getElementById('modal-title').innerText = win ? "¡VICTORIA!" : "DERROTA";
+                        document.getElementById('modal-title').style.color = win ? "#f1c40f" : "#ff4757";
+                        document.getElementById('trophy-change').innerText = (win?"+":"") + gain;
+                        this.dom.modalEnd.classList.remove('hidden');
+                    }
+                }, 600);
             },
 
-            // --- UTILS ---
-            anim(el, type) {
-                if(type === 'scale') { el.style.transform="scale(1.1)"; setTimeout(()=>el.style.transform="scale(1)", 100); }
-                if(type === 'jump') { el.style.transform="translateY(-30px)"; setTimeout(()=>el.style.transform="translateY(0)", 150); }
+            toMenu() {
+                this.dom.modalEnd.classList.add('hidden');
+                this.dom.game.classList.add('hidden');
+                this.dom.menu.classList.remove('hidden');
+                this.updateMenuUI();
             },
-            popText(el, txt, col) {
+            
+            // Helper to handle popup close flow
+            toMenuActual() {
+                this.dom.game.classList.add('hidden');
+                this.dom.menu.classList.remove('hidden');
+                this.updateMenuUI();
+            },
+
+            // Utils
+            tutStep(n) {
+                this.tutP = n; const h = this.dom.tut; h.classList.remove('hidden');
+                const r = [this.dom.btns.rel, this.dom.btns.atk, this.dom.btns.def][n-1].getBoundingClientRect();
+                h.style.top=(r.top-60)+'px'; h.style.left=(r.left+r.width/2-20)+'px';
+                if(n===3) setTimeout(()=>{ h.classList.add('hidden'); this.isTut=false; this.aiInt=setInterval(()=>this.ai(),2000); }, 3000);
+            },
+            pop(el, txt, col) {
                 const d = document.createElement('div'); d.className='dmg-pop'; d.innerText=txt; d.style.color=col;
                 const r = el.getBoundingClientRect(); d.style.left=(r.left+20)+'px'; d.style.top=r.top+'px';
                 document.getElementById('fx-layer').appendChild(d); setTimeout(()=>d.remove(), 800);
             },
+            emote(t) { const e=this.dom.e.emote; e.innerText=t; e.classList.remove('hidden'); setTimeout(()=>e.classList.add('hidden'),1000); },
             updateUI() {
                 const p = this.state.p; const e = this.state.e;
                 this.dom.p.hp.style.width = (p.hp/p.max*100)+'%'; this.dom.p.txt.innerText = Math.ceil(p.hp/p.max*100)+'%';
                 this.dom.e.hp.style.width = (e.hp/e.max*100)+'%'; this.dom.e.txt.innerText = Math.ceil(e.hp/e.max*100)+'%';
                 [0,1,2].forEach(i => {
-                    this.dom.p.dots[i].className = i < p.ammo ? 'dot filled' : 'dot'; this.dom.p.dots[i].style.background = i<p.ammo?'#2ed573':'#444';
-                    this.dom.e.dots[i].className = i < e.ammo ? 'dot filled' : 'dot'; this.dom.e.dots[i].style.background = i<e.ammo?'#ff4757':'#444';
+                    this.dom.p.dots[i].className = i<p.ammo?'dot filled':'dot'; this.dom.p.dots[i].style.background = i<p.ammo?'#2ed573':'#444';
+                    this.dom.e.dots[i].className = i<e.ammo?'dot filled':'dot'; this.dom.e.dots[i].style.background = i<e.ammo?'#ff4757':'#444';
                 });
             },
             updateBtns() {
-                const cd = this.state.p.cd > 0; const am = this.state.p.ammo;
-                this.dom.btns.atk.disabled = cd || am < 1; this.dom.btns.atk.style.opacity = (cd||am<1)?0.3:1;
-                this.dom.btns.rel.disabled = cd || am >= 3; this.dom.btns.rel.style.opacity = (cd||am>=3)?0.3:1;
-                this.dom.btns.def.disabled = cd || am < 1; this.dom.btns.def.style.opacity = (cd||am<1)?0.3:1;
-            },
-            tutStep(n) {
-                this.tutPhase = n;
-                const h = this.dom.tutHand; h.classList.remove('hidden');
-                if(n===1) this.point(this.dom.btns.rel);
-                else if(n===2) this.point(this.dom.btns.atk);
-                else if(n===3) { 
-                    this.point(this.dom.btns.def); 
-                    setTimeout(() => { h.classList.add('hidden'); this.isTut=false; this.aiInt = setInterval(() => this.ai(), 2000); }, 2000); 
-                }
-            },
-            point(el) {
-                const r = el.getBoundingClientRect();
-                this.dom.tutHand.style.top = (r.top - 60)+'px';
-                this.dom.tutHand.style.left = (r.left + r.width/2 - 20)+'px';
-            },
-            emote(txt) {
-                const e = this.dom.e.emote; e.innerText = txt; e.classList.remove('hidden'); setTimeout(()=>e.classList.add('hidden'), 1000);
-            },
-            toMenu() {
-                this.dom.game.classList.add('hidden'); this.dom.modal.classList.add('hidden'); this.dom.menu.classList.remove('hidden');
-                document.getElementById('menu-trophies').innerText = window.app.trophies;
+                const cd = this.state.p.cd>0; const am = this.state.p.ammo;
+                this.dom.btns.atk.disabled = cd || am<1; this.dom.btns.atk.style.opacity = (cd||am<1)?0.3:1;
+                this.dom.btns.def.disabled = cd || am<1; this.dom.btns.def.style.opacity = (cd||am<1)?0.3:1;
+                this.dom.btns.rel.disabled = cd || am>=3; this.dom.btns.rel.style.opacity = (cd||am>=3)?0.3:1;
             }
         };
 
-        // --- AUTH OBSERVER ---
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                window.app.currentUser = user;
-                document.getElementById('screen-login').classList.add('hidden');
-                document.getElementById('screen-menu').classList.remove('hidden');
-                window.app.loadUserData(user.uid);
-                // Iniciar audio context con interacción de usuario
-                document.addEventListener('click', () => AudioSys.init(), {once:true});
-                game.init();
+        // --- AUTH ---
+        onAuthStateChanged(auth, (u) => {
+            if(u) {
+                window.app.user = u;
+                // Merge local stats if any
+                getDoc(doc(db, "users", u.uid)).then(s => {
+                    if(s.exists()) window.app.trophies = Math.max(window.app.trophies, s.data().trophies);
+                    game.init();
+                });
             } else {
-                window.app.currentUser = null;
-                document.getElementById('screen-menu').classList.add('hidden');
-                document.getElementById('screen-login').classList.remove('hidden');
+                game.init(); // Start guest mode
             }
         });
+        
+        // Init Audio on click
+        document.addEventListener('click', () => AudioSys.init(), {once:true});
     </script>
 </body>
 </html>
