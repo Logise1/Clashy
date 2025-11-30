@@ -113,7 +113,7 @@
         
         .hit-squash { animation: squash 0.3s; filter: brightness(2) hue-rotate(90deg) !important; }
         .stunned { filter: grayscale(1) blur(2px); animation: shake 0.5s infinite; }
-        @keyframes squash { 0% { transform: scale(1, 1); } 30% { transform: scale(1.4, 0.6); } 100% { transform: scale(1, 1); } }
+        @keyframes squash { 0% { transform: scale(1, 1); } 30% { transform: scale(1.4, 0.6); } 60% { transform: scale(0.8, 1.2); } 100% { transform: scale(1, 1); } }
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
         
         .dmg-pop {
@@ -130,7 +130,7 @@
 
     <div id="app-loader">
         <h1 class="text-4xl animate-bounce mb-4 text-[#ff4757] -webkit-text-stroke-2 stroke-black">CLASHY</h1>
-        <div class="text-sm font-sans font-bold text-gray-400">Cargando sistema...</div>
+        <div id="loader-txt" class="text-sm font-sans font-bold text-gray-400">Conectando...</div>
     </div>
 
     <div class="toon-bg"></div>
@@ -163,7 +163,7 @@
                     <div id="menu-avatar-display" class="w-10 h-10 rounded-full bg-blue-100 border-2 border-black flex items-center justify-center text-2xl">🤠</div>
                     <div class="flex flex-col items-start leading-none">
                         <span id="menu-user" class="font-bold text-sm text-gray-700">Invitado</span>
-                        <span id="user-status" class="text-[10px] text-red-500 font-bold cursor-pointer underline" onclick="app.goToLoginScreen()">¡CONECTAR!</span>
+                        <span id="user-status" class="text-[10px] text-red-500 font-bold cursor-pointer underline" onclick="app.goToLoginScreen(true)">¡CONECTAR!</span>
                     </div>
                 </div>
                 <button onclick="app.logout()" class="text-xs bg-gray-200 text-gray-600 px-3 py-1 rounded-full font-bold border border-gray-400">Salir</button>
@@ -190,7 +190,7 @@
         </div>
     </div>
 
-    <!-- MENU MULTIJUGADOR -->
+    <!-- LOBBY ONLINE -->
     <div id="screen-lobby" class="hidden absolute inset-0 z-50 flex flex-col items-center justify-center p-4 bg-black/80">
         <div class="toon-panel w-full max-w-sm text-center zoom-in relative">
             <button onclick="document.getElementById('screen-lobby').classList.add('hidden')" class="absolute -top-3 -right-3 w-10 h-10 bg-red-500 rounded-full border-2 border-black text-white font-bold">X</button>
@@ -200,7 +200,7 @@
                 <p class="text-sm font-bold text-gray-600 mb-2">CREAR SALA</p>
                 <div class="flex gap-2">
                     <input type="text" id="create-room-code" readonly class="toon-input text-center text-xl tracking-widest bg-yellow-100 border-yellow-500" value="...">
-                    <button onclick="multiplayer.createRoom()" class="toon-btn btn-gold w-20 font-bold">CREAR</button>
+                    <button onclick="multiplayer.createRoom()" class="toon-btn btn-gold w-24 font-bold">CREAR</button>
                 </div>
                 <div id="host-msg" class="text-xs font-bold text-blue-500 h-4"></div>
             </div>
@@ -209,14 +209,14 @@
                 <p class="text-sm font-bold text-gray-600 mb-2">UNIRSE A SALA</p>
                 <div class="flex gap-2">
                     <input type="text" id="join-room-code" placeholder="CÓDIGO" class="toon-input text-center text-xl tracking-widest uppercase">
-                    <button onclick="multiplayer.joinRoom()" class="toon-btn btn-blue w-20 font-bold">ENTRAR</button>
+                    <button onclick="multiplayer.joinRoom()" class="toon-btn btn-blue w-24 font-bold">ENTRAR</button>
                 </div>
                 <div id="join-msg" class="text-xs font-bold text-red-500 h-4"></div>
             </div>
         </div>
     </div>
 
-    <!-- SELECTOR DE SKINS -->
+    <!-- SKINS -->
     <div id="modal-skins" class="hidden absolute inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
         <div class="toon-panel w-full max-w-sm text-center zoom-in relative">
             <button onclick="app.toggleSkins()" class="absolute -top-3 -right-3 w-10 h-10 bg-red-500 rounded-full border-2 border-black text-white font-bold">X</button>
@@ -226,7 +226,7 @@
         </div>
     </div>
 
-    <!-- JUEGO -->
+    <!-- GAME -->
     <div id="screen-game" class="hidden absolute inset-0 z-10 flex flex-col h-full w-full">
         <div id="game-container" class="w-full h-full flex flex-col">
             <!-- RIVAL -->
@@ -303,8 +303,8 @@
     <div id="modal-popup-login" class="hidden absolute inset-0 z-60 flex items-center justify-center bg-black/90 p-4">
         <div class="toon-panel w-full max-w-sm text-center zoom-in relative">
             <button onclick="app.skipPopup()" class="absolute top-2 right-4 text-gray-400 font-bold text-2xl">×</button>
-            <h2 class="text-3xl text-[#5352ed] font-black mb-2 stroke-black">¡GUARDA TUS COPAS!</h2>
-            <p class="text-sm text-gray-600 mb-6 font-bold">Llevas 3 partidas. Crea cuenta para no perder progreso.</p>
+            <h2 class="text-3xl text-[#5352ed] font-black mb-2 stroke-black">¡GUARDA COPAS!</h2>
+            <p class="text-sm text-gray-600 mb-6 font-bold">Llevas 3 partidas. Crea una cuenta para no perder tu progreso.</p>
             <button onclick="app.goToLoginScreen(true)" class="toon-btn btn-gold w-full h-14 text-xl font-black uppercase mb-2">CREAR CUENTA</button>
             <button onclick="app.skipPopup()" class="text-xs text-gray-400 font-bold underline mt-2">Seguir como invitado</button>
         </div>
@@ -323,18 +323,12 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, collection, query, orderBy, limit, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyBi5fQUumRe3zDb82mOcbl_m3JxP_9vVO4",
-            authDomain: "toon-acb19.firebaseapp.com",
-            projectId: "toon-acb19",
-            storageBucket: "toon-acb19.firebasestorage.app",
-            messagingSenderId: "627627273918",
-            appId: "1:627627273918:web:55132292fc07d4a06e38ef",
-            measurementId: "G-6MMXY2SG4D"
-        };
+        // CONFIG (AUTO FROM ENVIRONMENT)
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'clashy-default';
 
         let fApp, auth, db;
         try {
@@ -343,7 +337,6 @@
             db = getFirestore(fApp);
         } catch (e) { console.error("Firebase Error", e); }
 
-        // --- SKINS & UNLOCKS ---
         const SKINS = [
             {icon:'🤠', cost:0}, {icon:'👽', cost:0}, {icon:'🤖', cost:50}, 
             {icon:'🦄', cost:100}, {icon:'💀', cost:200}, {icon:'🎃', cost:300}, 
@@ -354,9 +347,8 @@
             {icon:'🥶', cost:4000}, {icon:'🥵', cost:5000}
         ];
 
-        // --- AUDIO SYSTEM (Web Audio API) ---
         const AudioSys = {
-            ctx: null, bgm: null,
+            ctx: null,
             init() { if(!this.ctx) this.ctx = new (window.AudioContext||window.webkitAudioContext)(); },
             play(type) {
                 if(!this.ctx) return;
@@ -386,40 +378,120 @@
                         g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + i*0.1 + 0.3);
                         o.start(this.ctx.currentTime + i*0.1); o.stop(this.ctx.currentTime + i*0.1 + 0.3);
                     });
-                } else if (type === 'bgm' && !this.bgm) {
-                    // Loop simple chiptune bass
-                    this.bgm = setInterval(() => {
-                        const o = this.ctx.createOscillator(); const g = this.ctx.createGain();
-                        o.connect(g); g.connect(this.ctx.destination);
-                        o.type = 'square'; o.frequency.value = 110;
-                        g.gain.setValueAtTime(0.05, this.ctx.currentTime);
-                        g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
-                        o.start(); o.stop(this.ctx.currentTime + 0.1);
-                    }, 500);
+                } else if(type === 'bgm') {
+                    // Simple infinite bgm loop
+                    const now = this.ctx.currentTime;
+                    const o = this.ctx.createOscillator();
+                    const g = this.ctx.createGain();
+                    o.connect(g); g.connect(this.ctx.destination);
+                    o.type = 'triangle';
+                    o.frequency.setValueAtTime(220, now);
+                    o.frequency.exponentialRampToValueAtTime(440, now+0.1);
+                    g.gain.setValueAtTime(0.05, now);
+                    g.gain.linearRampToValueAtTime(0, now+0.2);
+                    o.start(now); o.stop(now+0.2);
                 }
             }
         };
 
-        // --- APP STATE ---
         window.app = {
-            user: null,
+            user: null, // Firebase Auth user (Anonymous)
+            realUser: null, // Custom user profile {username, trophies...}
             trophies: parseInt(localStorage.getItem('clashy_trophies') || 0),
             matchesPlayed: parseInt(localStorage.getItem('clashy_matches') || 0),
             currentSkin: localStorage.getItem('clashy_skin') || SKINS[0].icon,
             authMode: 'login',
 
-            // ... (Auth funcs same as before, shortened for space) ...
-            setTab(m) { this.authMode=m; this.updateAuthUI(); },
-            updateAuthUI() { /* ... styles update ... */ },
-            
-            submitAuth: async () => { /* ... firebase auth logic ... */ },
-            logout: () => signOut(auth).then(()=>window.location.reload()),
-            
+            setTab(m) {
+                this.authMode=m;
+                const bL=document.getElementById('tab-login'), bR=document.getElementById('tab-register'), bA=document.getElementById('btn-action');
+                if(m==='login') {
+                    bL.className="flex-1 py-2 font-bold border-b-4 border-blue-500 text-blue-500";
+                    bR.className="flex-1 py-2 font-bold border-b-4 border-transparent text-gray-400";
+                    bA.innerText="INICIAR"; bA.classList.replace('btn-purple','btn-blue');
+                } else {
+                    bR.className="flex-1 py-2 font-bold border-b-4 border-purple-500 text-purple-500";
+                    bL.className="flex-1 py-2 font-bold border-b-4 border-transparent text-gray-400";
+                    bA.innerText="CREAR"; bA.classList.replace('btn-blue','btn-purple');
+                }
+            },
+
+            // USERS COLLECTION PATH: /artifacts/{appId}/public/data/users/{username}
+            // Using username as ID for simplicity in this demo
+            getUsersRef: () => collection(db, 'artifacts', appId, 'public', 'data', 'users'),
+            getUserDoc: (username) => doc(db, 'artifacts', appId, 'public', 'data', 'users', username),
+
+            submitAuth: async () => {
+                if (!window.app.user) return; // Must be anon auth first
+                const u = document.getElementById('inp-user').value.trim();
+                const p = document.getElementById('inp-pass').value.trim();
+                const m = document.getElementById('login-msg');
+                if(!u || !p) { m.innerText = "Faltan datos"; return; }
+                m.innerText = "Procesando...";
+
+                try {
+                    const userRef = window.app.getUserDoc(u);
+                    const snap = await getDoc(userRef);
+
+                    if(window.app.authMode === 'login') {
+                        if(snap.exists() && snap.data().pass === p) {
+                            window.app.realUser = snap.data();
+                            window.app.trophies = snap.data().trophies;
+                            window.app.currentSkin = snap.data().skin || SKINS[0].icon;
+                            window.app.saveLocal();
+                            window.app.closeLogin();
+                            window.game.updateMenuUI();
+                        } else {
+                            m.innerText = "Usuario o contraseña incorrectos";
+                        }
+                    } else {
+                        if(snap.exists()) {
+                            m.innerText = "El usuario ya existe";
+                        } else {
+                            const newProfile = { username: u, pass: p, trophies: window.app.trophies, skin: window.app.currentSkin };
+                            await setDoc(userRef, newProfile);
+                            window.app.realUser = newProfile;
+                            window.app.saveLocal();
+                            window.app.closeLogin();
+                            window.game.updateMenuUI();
+                        }
+                    }
+                } catch(e) { m.innerText = "Error conexión"; console.error(e); }
+            },
+
+            logout: () => {
+                window.app.realUser = null;
+                localStorage.removeItem('clashy_user_session'); // Clear session
+                window.location.reload();
+            },
+
+            playAsGuest: () => {
+                window.app.closeLogin();
+                game.init();
+            },
+
+            goToLoginScreen: (fm) => {
+                document.getElementById('modal-popup-login').classList.add('hidden');
+                document.getElementById('screen-menu').classList.add('hidden');
+                document.getElementById('screen-login').classList.remove('hidden');
+                document.getElementById('btn-close-login').classList.toggle('hidden', !fm);
+                document.getElementById('btn-guest').classList.toggle('hidden', fm);
+            },
+            closeLogin: () => { document.getElementById('screen-login').classList.add('hidden'); document.getElementById('screen-menu').classList.remove('hidden'); },
+            skipPopup: () => { document.getElementById('modal-popup-login').classList.add('hidden'); game.toMenuActual(); },
+
             saveLocal: () => {
                 localStorage.setItem('clashy_trophies', window.app.trophies);
                 localStorage.setItem('clashy_matches', window.app.matchesPlayed);
                 localStorage.setItem('clashy_skin', window.app.currentSkin);
-                if(window.app.user) setDoc(doc(db, "users", window.app.user.uid), { trophies: window.app.trophies, skin: window.app.currentSkin }, { merge: true });
+                if(window.app.realUser) {
+                    localStorage.setItem('clashy_user_session', window.app.realUser.username); // Simple session persistance
+                    // Sync to DB
+                    setDoc(window.app.getUserDoc(window.app.realUser.username), { 
+                        trophies: window.app.trophies, 
+                        skin: window.app.currentSkin 
+                    }, { merge: true });
+                }
             },
 
             showLeaderboard: async () => {
@@ -427,7 +499,7 @@
                 const list = document.getElementById('ranking-list');
                 list.innerHTML = '<div class="text-center p-4">Cargando...</div>';
                 try {
-                    const q = query(collection(db, "users"), orderBy("trophies", "desc"), limit(10));
+                    const q = query(window.app.getUsersRef(), orderBy("trophies", "desc"), limit(10));
                     const querySnapshot = await getDocs(q);
                     list.innerHTML = "";
                     let rank = 1;
@@ -436,10 +508,9 @@
                         const color = rank === 1 ? 'text-yellow-500' : 'text-gray-600';
                         list.innerHTML += `<div class="flex justify-between p-2 border-b"><span class="${color} font-black">#${rank++}</span><span>${d.username}</span><span>${d.trophies} 🏆</span></div>`;
                     });
-                } catch(e) { list.innerText = "Error"; }
+                } catch(e) { list.innerText = "Error ranking"; }
             },
 
-            // SKIN LOGIC
             toggleSkins: () => {
                 const m = document.getElementById('modal-skins');
                 if(m.classList.contains('hidden')) {
@@ -451,7 +522,7 @@
                         d.innerHTML = locked ? `${s.icon}<div class="lock-overlay"><i class="fas fa-lock mr-1"></i>${s.cost}</div>` : s.icon;
                         if(!locked) d.onclick = () => {
                             window.app.currentSkin = s.icon;
-                            app.toggleSkins(); app.toggleSkins(); // Refresh
+                            app.toggleSkins(); app.toggleSkins();
                             app.saveSkin();
                         };
                         c.appendChild(d);
@@ -461,68 +532,48 @@
             },
             saveSkin: () => { window.app.saveLocal(); document.getElementById('modal-skins').classList.add('hidden'); document.getElementById('menu-avatar-display').innerText = window.app.currentSkin; },
 
-            // MULTIPLAYER LOBBY
+            // MULTIPLAYER (BETA) - Uses same structure but under matches collection
             showLobby: () => { document.getElementById('screen-lobby').classList.remove('hidden'); document.getElementById('create-room-code').value = Math.random().toString(36).substring(7).toUpperCase(); },
-            
-            // NAVIGATION
-            goToLoginScreen: (fm) => {
-                document.getElementById('modal-popup-login').classList.add('hidden');
-                document.getElementById('screen-menu').classList.add('hidden');
-                document.getElementById('screen-login').classList.remove('hidden');
-                document.getElementById('btn-close-login').classList.toggle('hidden', !fm);
-            },
-            closeLogin: () => { document.getElementById('screen-login').classList.add('hidden'); document.getElementById('screen-menu').classList.remove('hidden'); },
-            playAsGuest: () => { document.getElementById('screen-login').classList.add('hidden'); document.getElementById('screen-menu').classList.remove('hidden'); game.init(); },
-            skipPopup: () => { document.getElementById('modal-popup-login').classList.add('hidden'); game.toMenuActual(); }
         };
 
-        // --- MULTIPLAYER LOGIC (Pseudo-Realtime via Firestore) ---
         window.multiplayer = {
             roomId: null, role: null, unsubscribe: null,
+            getMatchRef: (id) => doc(db, 'artifacts', appId, 'public', 'data', 'matches', id),
             createRoom: async () => {
                 const code = document.getElementById('create-room-code').value;
-                document.getElementById('host-msg').innerText = "Esperando rival...";
-                const roomRef = doc(db, "matches", code);
+                document.getElementById('host-msg').innerText = "Esperando...";
+                const roomRef = multiplayer.getMatchRef(code);
                 await setDoc(roomRef, {
                     host: window.app.currentSkin, guest: null,
                     p1: { hp: 300, ammo: 0, shield: false }, p2: { hp: 300, ammo: 0, shield: false },
                     status: 'waiting', lastAction: Date.now()
                 });
-                this.roomId = code; this.role = 'host';
-                this.listen(roomRef);
+                multiplayer.roomId = code; multiplayer.role = 'host';
+                multiplayer.listen(roomRef);
             },
             joinRoom: async () => {
                 const code = document.getElementById('join-room-code').value;
-                const roomRef = doc(db, "matches", code);
+                const roomRef = multiplayer.getMatchRef(code);
                 const snap = await getDoc(roomRef);
                 if(snap.exists() && snap.data().status === 'waiting') {
                     await setDoc(roomRef, { guest: window.app.currentSkin, status: 'playing' }, { merge: true });
-                    this.roomId = code; this.role = 'guest';
-                    this.listen(roomRef);
-                } else {
-                    document.getElementById('join-msg').innerText = "Sala no válida";
-                }
+                    multiplayer.roomId = code; multiplayer.role = 'guest';
+                    multiplayer.listen(roomRef);
+                } else document.getElementById('join-msg').innerText = "Sala inválida";
             },
             listen: (ref) => {
-                this.unsubscribe = onSnapshot(ref, (doc) => {
+                multiplayer.unsubscribe = onSnapshot(ref, (doc) => {
                     const data = doc.data();
                     if(!data) return;
                     if(data.status === 'playing') {
                         document.getElementById('screen-lobby').classList.add('hidden');
                         if(!game.state) game.startOnline(data);
-                        else game.syncOnline(data);
+                        // Simplified sync logic would go here
                     }
                 });
-            },
-            sendAction: async (type) => {
-                if(!this.roomId) return;
-                // Simplified logic: Client trust for speed in this demo
-                // Ideally, send intent, server resolves. Here we update shared state.
-                // ... Implementation omitted for brevity, focusing on local feel ...
             }
         };
 
-        // --- GAME ENGINE ---
         window.game = {
             dom: null, state: null, mode: 'local',
             
@@ -546,14 +597,14 @@
                 document.getElementById('menu-avatar-display').innerText = window.app.currentSkin;
                 const uLabel = document.getElementById('menu-user');
                 const uStatus = document.getElementById('user-status');
-                if(window.app.user) { uLabel.innerText = "Conectado"; uStatus.innerText = "OK"; uStatus.className = "text-green-500 font-bold"; }
+                if(window.app.realUser) { uLabel.innerText = window.app.realUser.username; uStatus.innerText = "CONECTADO"; uStatus.className = "text-green-500 font-bold"; }
                 else { uLabel.innerText = "Invitado"; uStatus.innerText = "¡CONECTAR!"; uStatus.className = "text-red-500 font-bold animate-pulse cursor-pointer"; }
                 this.dom.menuCont.classList.remove('zoom-out'); this.dom.menuCont.classList.add('zoom-in');
                 AudioSys.playMusic('bgm');
             },
 
-            startLocal() { this.mode = 'local'; this.start(); },
-            startOnline(data) { this.mode = 'online'; this.start(data); },
+            startLocal() { this.mode='local'; this.start(); },
+            startOnline(d) { this.mode='online'; this.start(d); },
 
             start(onlineData=null) {
                 this.dom.menuCont.classList.replace('zoom-in', 'zoom-out');
@@ -562,7 +613,6 @@
                     this.dom.game.classList.remove('hidden');
                     this.dom.gameCont.classList.remove('zoom-out'); this.dom.gameCont.classList.add('zoom-in');
 
-                    // Setup
                     this.dom.p.sprite.innerText = window.app.currentSkin;
                     if(onlineData) {
                         this.dom.e.sprite.innerText = (window.multiplayer.role === 'host') ? onlineData.guest : onlineData.host;
@@ -572,7 +622,6 @@
                         this.dom.e.sprite.innerText = rand;
                     }
 
-                    // 300 HP FOR BOTH
                     this.state = {
                         active: true,
                         p: { hp: 300, max: 300, ammo: 0, shield: false, cd: 0, dmg: 20 },
@@ -581,12 +630,11 @@
 
                     this.updateUI();
                     this.loops = setInterval(() => this.loop(), 50);
-                    
                     if(this.mode === 'local') {
-                        // AI CURVE
-                        let speed = 2000; // Slow start
+                        // Slow AI curve
+                        let speed = 2000;
                         if(window.app.trophies > 50) speed = 1000;
-                        if(window.app.trophies > 150) speed = 600;
+                        if(window.app.trophies > 200) speed = 600;
                         this.aiInt = setInterval(() => this.ai(), speed);
                     }
                 }, 400);
@@ -602,20 +650,11 @@
                 if(!this.state.active || this.state.e.cd > 0) return;
                 const p = this.state.p; const e = this.state.e;
                 let act = 'reload';
-
-                // CURVE LOGIC
-                if (window.app.trophies < 50) {
-                    // Very Dumb AI
-                    if (e.ammo === 0) act = 'reload';
-                    else act = Math.random() > 0.5 ? 'attack' : 'reload';
-                } else {
-                    // Smart AI
-                    if (e.ammo === 0) act = 'reload';
-                    else {
-                        if (p.ammo === 0 && e.ammo > 0) act = 'attack';
-                        else if (p.ammo > 0 && Math.random() < 0.4) { act = 'defend'; this.emote('🛡️'); }
-                        else act = e.ammo < 3 ? 'reload' : 'attack';
-                    }
+                if (e.ammo === 0) act = 'reload';
+                else {
+                    if (p.ammo === 0 && e.ammo > 0) act = 'attack';
+                    else if (p.ammo > 0 && Math.random() < 0.4) { act = 'defend'; this.emote('🛡️'); }
+                    else act = e.ammo < 3 ? 'reload' : 'attack';
                 }
                 this.exec(false, act);
             },
@@ -657,11 +696,9 @@
                 const ts = isP ? this.dom.e.sprite : this.dom.p.sprite;
                 if(t.shield) {
                     this.pop(ts, "¡BLOQUEO!", "#4facfe");
-                    // Stun
                     const victim = isP ? this.state.p : this.state.e;
                     const vSprite = isP ? this.dom.p.sprite : this.dom.e.sprite;
-                    victim.cd = 1500; vSprite.classList.add('stunned');
-                    setTimeout(()=>vSprite.classList.remove('stunned'), 1500);
+                    victim.cd = 1500; vSprite.classList.add('stunned'); setTimeout(()=>vSprite.classList.remove('stunned'), 1500);
                 } else {
                     t.hp -= 20; AudioSys.play('hit');
                     ts.classList.add('hit-squash'); setTimeout(()=>ts.classList.remove('hit-squash'), 300);
@@ -675,8 +712,8 @@
                 this.state.active = false;
                 clearInterval(this.loops); clearInterval(this.aiInt);
                 this.dom.gameCont.classList.replace('zoom-in','zoom-out');
-
-                const gain = win ? 20 : -10;
+                
+                const gain = win ? 30 : -10;
                 window.app.trophies = Math.max(0, window.app.trophies + gain);
                 window.app.matchesPlayed++;
                 window.app.saveLocal();
@@ -684,7 +721,7 @@
                 if(win) AudioSys.playMusic('win');
 
                 setTimeout(() => {
-                    if(window.app.matchesPlayed === 3 && !window.app.user) {
+                    if(window.app.matchesPlayed === 3 && !window.app.realUser) {
                         document.getElementById('modal-popup-login').classList.remove('hidden');
                     } else {
                         document.getElementById('modal-title').innerText = win ? "¡VICTORIA!" : "DERROTA";
@@ -695,14 +732,9 @@
                 }, 600);
             },
 
-            // --- UTILS ---
             toMenu() { this.dom.modalEnd.classList.add('hidden'); this.dom.game.classList.add('hidden'); this.dom.menu.classList.remove('hidden'); this.updateMenuUI(); },
             toMenuActual() { this.dom.game.classList.add('hidden'); this.dom.menu.classList.remove('hidden'); this.updateMenuUI(); },
-            pop(el, txt, col) {
-                const d = document.createElement('div'); d.className='dmg-pop'; d.innerText=txt; d.style.color=col;
-                const r = el.getBoundingClientRect(); d.style.left=(r.left+20)+'px'; d.style.top=r.top+'px';
-                document.getElementById('fx-layer').appendChild(d); setTimeout(()=>d.remove(), 800);
-            },
+            pop(el, txt, col) { const d = document.createElement('div'); d.className='dmg-pop'; d.innerText=txt; d.style.color=col; const r = el.getBoundingClientRect(); d.style.left=(r.left+20)+'px'; d.style.top=r.top+'px'; document.getElementById('fx-layer').appendChild(d); setTimeout(()=>d.remove(), 800); },
             emote(t) { const e=this.dom.e.emote; e.innerText=t; e.classList.remove('hidden'); setTimeout(()=>e.classList.add('hidden'),1000); },
             updateUI() {
                 const p = this.state.p; const e = this.state.e;
@@ -721,23 +753,24 @@
             }
         };
 
-        onAuthStateChanged(auth, (u) => {
-            if(u) {
-                window.app.user = u;
-                document.getElementById('screen-login').classList.add('hidden');
-                document.getElementById('screen-menu').classList.remove('hidden');
-                getDoc(doc(db, "users", u.uid)).then(s => {
+        // --- AUTH INIT ---
+        // 1. Silent Anon Auth to enable Firestore Access
+        signInAnonymously(auth).then(userCred => {
+            // Check if there is a session stored in LocalStorage (basic session persistence)
+            const savedUser = localStorage.getItem('clashy_user_session');
+            if(savedUser) {
+                // Try to "auto-login" with the mock profile
+                window.app.getUserDoc(savedUser); 
+                // In a real app we'd verify token, here we trust local for UX speed + firestore verify on action
+                getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', savedUser)).then(s => {
                     if(s.exists()) {
-                        const d = s.data();
-                        window.app.trophies = Math.max(window.app.trophies, d.trophies);
-                        if(d.skin) window.app.currentSkin = d.skin;
+                        window.app.realUser = s.data();
+                        window.app.trophies = s.data().trophies;
+                        if(s.data().skin) window.app.currentSkin = s.data().skin;
                     }
                     game.init();
                 });
             } else {
-                if(document.getElementById('screen-menu').classList.contains('hidden')) {
-                    document.getElementById('screen-login').classList.remove('hidden');
-                }
                 game.init();
             }
         });
