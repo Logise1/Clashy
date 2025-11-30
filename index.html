@@ -21,7 +21,6 @@
             user-select: none;
         }
 
-        /* CAPA DE CARGA (Para evitar errores de click antes de tiempo) */
         #app-loader {
             position: fixed; inset: 0; z-index: 9999;
             background: #222; color: white;
@@ -130,8 +129,12 @@
 
     <!-- PANTALLA LOGIN INICIAL -->
     <div id="screen-login" class="hidden absolute inset-0 z-50 flex flex-col items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-        <div class="toon-panel w-full max-w-sm text-center transform rotate-1 zoom-in">
-            <h1 class="text-5xl text-[#ff4757] -webkit-text-stroke-2 stroke-black drop-shadow-md mb-4">CLASHY</h1>
+        <div class="toon-panel w-full max-w-sm text-center transform rotate-1 zoom-in relative">
+            
+            <!-- Botón Cerrar (Solo visible si vienes del menú) -->
+            <button id="btn-close-login" onclick="app.closeLogin()" class="hidden absolute -top-3 -right-3 w-10 h-10 bg-red-500 rounded-full border-2 border-black text-white font-bold">X</button>
+
+            <h1 class="text-5xl text-[#ff4757] -webkit-text-stroke-2 stroke-black drop-shadow-md mb-4">CUENTA</h1>
             
             <div class="flex mb-4 gap-2">
                 <button onclick="app.setTab('login')" id="tab-login" class="flex-1 py-2 font-bold border-b-4 border-blue-500 text-blue-500">ENTRAR</button>
@@ -149,19 +152,24 @@
                 <div id="login-msg" class="text-red-500 font-sans text-sm font-bold min-h-[20px]"></div>
             </div>
             
-            <button onclick="app.playAsGuest()" class="mt-4 text-gray-500 font-bold underline text-sm cursor-pointer">Jugar como Invitado</button>
+            <button id="btn-guest" onclick="app.playAsGuest()" class="mt-4 text-gray-500 font-bold underline text-sm cursor-pointer">Jugar como Invitado</button>
         </div>
     </div>
 
     <!-- PANTALLA MENU -->
     <div id="screen-menu" class="absolute inset-0 z-40 flex flex-col items-center justify-center p-4">
         <div id="menu-container" class="toon-panel w-full max-w-sm text-center transform -rotate-1 zoom-in">
+            
+            <!-- Header Usuario -->
             <div class="flex justify-between items-center mb-4 border-b-2 border-gray-200 pb-2">
                 <div class="flex items-center gap-2">
                     <div class="w-8 h-8 rounded-full bg-blue-500 border-2 border-black flex items-center justify-center text-white text-xs">👤</div>
-                    <span id="menu-user" class="font-bold text-sm text-gray-700">Cargando...</span>
+                    <div class="flex flex-col items-start leading-none">
+                        <span id="menu-user" class="font-bold text-sm text-gray-700">Invitado</span>
+                        <span id="user-status" class="text-[10px] text-red-500 font-bold cursor-pointer underline" onclick="app.goToLoginScreen()">¡CONECTAR!</span>
+                    </div>
                 </div>
-                <button onclick="app.logout()" class="text-xs bg-red-100 text-red-500 px-2 py-1 rounded font-bold border border-red-300">Salir</button>
+                <button onclick="app.logout()" class="text-xs bg-gray-200 text-gray-600 px-3 py-1 rounded-full font-bold border border-gray-400">Salir</button>
             </div>
 
             <h1 class="text-6xl text-[#ff4757] -webkit-text-stroke-2 stroke-black mb-2 drop-shadow-md">CLASHY</h1>
@@ -256,13 +264,13 @@
         </div>
     </div>
 
-    <!-- POPUP LOGIN (3 PARTIDAS) -->
+    <!-- POPUP LOGIN -->
     <div id="modal-popup-login" class="hidden absolute inset-0 z-60 flex items-center justify-center bg-black/90 p-4">
         <div class="toon-panel w-full max-w-sm text-center zoom-in relative">
             <button onclick="app.skipPopup()" class="absolute top-2 right-4 text-gray-400 font-bold text-2xl">×</button>
             <h2 class="text-3xl text-[#5352ed] font-black mb-2 stroke-black">¡GUARDA TU PROGRESO!</h2>
             <p class="text-sm text-gray-600 mb-6 font-bold">Llevas 3 partidas. Crea una cuenta para no perder tus copas.</p>
-            <button onclick="app.goToLoginScreen()" class="toon-btn btn-gold w-full h-14 text-xl font-black uppercase mb-2">CREAR CUENTA</button>
+            <button onclick="app.goToLoginScreen(true)" class="toon-btn btn-gold w-full h-14 text-xl font-black uppercase mb-2">CREAR CUENTA</button>
             <button onclick="app.skipPopup()" class="text-xs text-gray-400 font-bold underline mt-2">Seguir como invitado</button>
         </div>
     </div>
@@ -293,12 +301,9 @@
             measurementId: "G-6MMXY2SG4D"
         };
 
-        let fApp, auth, db;
-        try {
-            fApp = initializeApp(firebaseConfig);
-            auth = getAuth(fApp);
-            db = getFirestore(fApp);
-        } catch (e) { console.error("Firebase Error", e); }
+        const fApp = initializeApp(firebaseConfig);
+        const auth = getAuth(fApp);
+        const db = getFirestore(fApp);
 
         // --- AUDIO ---
         const AudioSys = {
@@ -321,7 +326,7 @@
             }
         };
 
-        // --- APP LOGIC ---
+        // --- LOGICA APP ---
         window.app = {
             user: null,
             trophies: parseInt(localStorage.getItem('clashy_trophies') || 0),
@@ -349,13 +354,27 @@
             playAsGuest() {
                 document.getElementById('screen-login').classList.add('hidden');
                 document.getElementById('screen-menu').classList.remove('hidden');
-                game.init();
+                game.init(); 
             },
 
-            goToLoginScreen() {
+            goToLoginScreen(fromMenu = false) {
                 document.getElementById('modal-popup-login').classList.add('hidden');
                 document.getElementById('screen-menu').classList.add('hidden');
                 document.getElementById('screen-login').classList.remove('hidden');
+                
+                // Mostrar botón cerrar si venimos del menú
+                if(fromMenu) {
+                    document.getElementById('btn-close-login').classList.remove('hidden');
+                    document.getElementById('btn-guest').classList.add('hidden'); // Ocultar jugar como invitado si ya estamos dentro
+                } else {
+                    document.getElementById('btn-close-login').classList.add('hidden');
+                    document.getElementById('btn-guest').classList.remove('hidden');
+                }
+            },
+
+            closeLogin() {
+                document.getElementById('screen-login').classList.add('hidden');
+                document.getElementById('screen-menu').classList.remove('hidden');
             },
 
             skipPopup() {
@@ -436,18 +455,25 @@
                 };
                 this.updateMenuUI();
                 // Ocultar Loader
-                document.getElementById('app-loader').style.opacity = '0';
-                setTimeout(() => document.getElementById('app-loader').style.display = 'none', 500);
+                const l = document.getElementById('app-loader');
+                l.style.opacity = '0';
+                setTimeout(() => l.style.display = 'none', 500);
             },
 
             updateMenuUI() {
                 document.getElementById('menu-trophies').innerText = window.app.trophies;
                 const uLabel = document.getElementById('menu-user');
+                const uStatus = document.getElementById('user-status');
+                
                 if(window.app.user) {
                     uLabel.innerText = "Cargando...";
+                    uStatus.innerText = "CONECTADO";
+                    uStatus.className = "text-[10px] text-green-500 font-bold";
                     getDoc(doc(db, "users", window.app.user.uid)).then(s => { if(s.exists()) uLabel.innerText = s.data().username; });
                 } else {
                     uLabel.innerText = "Invitado";
+                    uStatus.innerText = "¡CONECTAR!";
+                    uStatus.className = "text-[10px] text-red-500 font-bold cursor-pointer underline animate-pulse";
                 }
                 this.dom.menuCont.classList.remove('zoom-out');
                 this.dom.menuCont.classList.add('zoom-in');
@@ -493,12 +519,11 @@
                 const p = this.state.p; const e = this.state.e;
                 let act = 'reload';
 
-                // IA INTELIGENTE: Nunca usa escudo con 0 balas
+                // IA SEGURA: Jamás escudo con 0 balas
                 if (e.ammo === 0) {
                     act = 'reload';
                 } else {
-                    // Tiene balas
-                    if (p.ammo === 0 && e.ammo > 0) act = 'attack'; // Jugador vulnerable
+                    if (p.ammo === 0 && e.ammo > 0) act = 'attack'; 
                     else if (p.ammo > 0 && Math.random() < 0.4) {
                         act = 'defend'; this.emote('🛡️');
                     } else {
@@ -569,7 +594,6 @@
             end(win) {
                 this.state.active = false;
                 clearInterval(this.loops); clearInterval(this.aiInt);
-                
                 this.dom.gameCont.classList.remove('zoom-in');
                 this.dom.gameCont.classList.add('zoom-out');
 
@@ -632,8 +656,7 @@
             }
         };
 
-        // --- INICIALIZACIÓN ---
-        // Se ejecuta al cargar Firebase
+        // --- AUTH ---
         onAuthStateChanged(auth, (u) => {
             if(u) {
                 window.app.user = u;
@@ -644,7 +667,6 @@
                     game.init();
                 });
             } else {
-                // Si no hay usuario y no estamos en el menú (primer load)
                 if(document.getElementById('screen-menu').classList.contains('hidden')) {
                     document.getElementById('screen-login').classList.remove('hidden');
                 }
@@ -652,11 +674,6 @@
             }
         });
         
-        // Failsafe por si Firebase falla o tarda
-        setTimeout(() => {
-            if(!window.game.dom) game.init();
-        }, 1000);
-
         document.addEventListener('click', () => AudioSys.init(), {once:true});
     </script>
 </body>
