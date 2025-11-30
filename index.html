@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Clashy: Ultimate</title>
+    <title>Clashy: Battle Arena</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Titan+One&display=swap" rel="stylesheet">
     
     <style>
         :root { --font-toon: 'Titan One', cursive; }
-        * { -webkit-tap-highlight-color: transparent; }
+        * { -webkit-tap-highlight-color: transparent; user-select: none; }
+        input { user-select: text !important; -webkit-user-select: text !important; }
         
         body {
             font-family: var(--font-toon);
@@ -18,17 +19,19 @@
             overflow: hidden; touch-action: none;
             height: 100dvh; width: 100vw;
             display: flex; flex-direction: column;
-            user-select: none;
         }
 
+        /* CAPA DE CARGA */
         #app-loader {
             position: fixed; inset: 0; z-index: 9999;
             background: #222; color: white;
             display: flex; align-items: center; justify-content: center;
             flex-direction: column; transition: opacity 0.5s;
+            pointer-events: auto;
         }
+        .loader-hidden { opacity: 0; pointer-events: none !important; }
 
-        /* --- BACKGROUND --- */
+        /* --- FONDO --- */
         .toon-bg {
             position: absolute; inset: 0; z-index: -2;
             background: #5dbb63;
@@ -54,14 +57,14 @@
             border: 0.4vh solid #333; border-radius: 1.5vh;
             font-family: sans-serif; font-weight: bold; font-size: 2vh;
             outline: none; background: #f0f0f0; color: #000;
-            pointer-events: auto; user-select: text; -webkit-user-select: text;
+            pointer-events: auto;
         }
+        .toon-input:focus { border-color: #4facfe; background: white; }
 
         .toon-btn {
             position: relative; border: 0.5vh solid #000; border-radius: 2vh;
             transition: transform 0.1s; display: flex; flex-direction: column; 
             align-items: center; justify-content: center; cursor: pointer;
-            user-select: none;
         }
         .toon-btn:active { transform: translateY(0.5vh); box-shadow: none !important; }
         .toon-btn:disabled { filter: grayscale(1); opacity: 0.5; box-shadow: none; transform: translateY(0.5vh); }
@@ -70,7 +73,6 @@
         .btn-blue { background: #2ed573; box-shadow: 0 0.8vh 0 #27ae60; color: white; }
         .btn-gold { background: #f1c40f; box-shadow: 0 0.8vh 0 #d4ac0d; color: #333; }
         .btn-purple { background: #5352ed; box-shadow: 0 0.8vh 0 #3742fa; color: white; }
-        .btn-gray { background: #95a5a6; box-shadow: 0 0.8vh 0 #7f8c8d; color: white; }
 
         /* --- SKINS --- */
         .skin-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1vh; max-height: 40vh; overflow-y: auto; }
@@ -130,7 +132,7 @@
 
     <div id="app-loader">
         <h1 class="text-4xl animate-bounce mb-4 text-[#ff4757] -webkit-text-stroke-2 stroke-black">CLASHY</h1>
-        <div id="loader-txt" class="text-sm font-sans font-bold text-gray-400">Conectando...</div>
+        <div id="loader-text" class="text-sm font-sans font-bold text-gray-400">Conectando...</div>
     </div>
 
     <div class="toon-bg"></div>
@@ -195,7 +197,6 @@
         <div class="toon-panel w-full max-w-sm text-center zoom-in relative">
             <button onclick="document.getElementById('screen-lobby').classList.add('hidden')" class="absolute -top-3 -right-3 w-10 h-10 bg-red-500 rounded-full border-2 border-black text-white font-bold">X</button>
             <h2 class="text-3xl text-[#2ed573] font-black mb-4 stroke-black">VS AMIGO</h2>
-            
             <div class="mb-6">
                 <p class="text-sm font-bold text-gray-600 mb-2">CREAR SALA</p>
                 <div class="flex gap-2">
@@ -204,7 +205,6 @@
                 </div>
                 <div id="host-msg" class="text-xs font-bold text-blue-500 h-4"></div>
             </div>
-
             <div class="border-t-2 border-gray-200 pt-4">
                 <p class="text-sm font-bold text-gray-600 mb-2">UNIRSE A SALA</p>
                 <div class="flex gap-2">
@@ -304,7 +304,7 @@
         <div class="toon-panel w-full max-w-sm text-center zoom-in relative">
             <button onclick="app.skipPopup()" class="absolute top-2 right-4 text-gray-400 font-bold text-2xl">×</button>
             <h2 class="text-3xl text-[#5352ed] font-black mb-2 stroke-black">¡GUARDA COPAS!</h2>
-            <p class="text-sm text-gray-600 mb-6 font-bold">Llevas 3 partidas. Crea una cuenta para no perder tu progreso.</p>
+            <p class="text-sm text-gray-600 mb-6 font-bold">Llevas 3 partidas. Crea una cuenta.</p>
             <button onclick="app.goToLoginScreen(true)" class="toon-btn btn-gold w-full h-14 text-xl font-black uppercase mb-2">CREAR CUENTA</button>
             <button onclick="app.skipPopup()" class="text-xs text-gray-400 font-bold underline mt-2">Seguir como invitado</button>
         </div>
@@ -326,7 +326,6 @@
         import { getAuth, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, collection, query, orderBy, limit, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-        // CONFIG (AUTO FROM ENVIRONMENT)
         const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'clashy-default';
 
@@ -379,16 +378,12 @@
                         o.start(this.ctx.currentTime + i*0.1); o.stop(this.ctx.currentTime + i*0.1 + 0.3);
                     });
                 } else if(type === 'bgm') {
-                    // Simple infinite bgm loop
                     const now = this.ctx.currentTime;
-                    const o = this.ctx.createOscillator();
-                    const g = this.ctx.createGain();
+                    const o = this.ctx.createOscillator(); const g = this.ctx.createGain();
                     o.connect(g); g.connect(this.ctx.destination);
-                    o.type = 'triangle';
-                    o.frequency.setValueAtTime(220, now);
+                    o.type = 'triangle'; o.frequency.setValueAtTime(220, now);
                     o.frequency.exponentialRampToValueAtTime(440, now+0.1);
-                    g.gain.setValueAtTime(0.05, now);
-                    g.gain.linearRampToValueAtTime(0, now+0.2);
+                    g.gain.setValueAtTime(0.05, now); g.gain.linearRampToValueAtTime(0, now+0.2);
                     o.start(now); o.stop(now+0.2);
                 }
             }
@@ -396,7 +391,7 @@
 
         window.app = {
             user: null, // Firebase Auth user (Anonymous)
-            realUser: null, // Custom user profile {username, trophies...}
+            realUser: null, // Simulated user
             trophies: parseInt(localStorage.getItem('clashy_trophies') || 0),
             matchesPlayed: parseInt(localStorage.getItem('clashy_matches') || 0),
             currentSkin: localStorage.getItem('clashy_skin') || SKINS[0].icon,
@@ -416,13 +411,11 @@
                 }
             },
 
-            // USERS COLLECTION PATH: /artifacts/{appId}/public/data/users/{username}
-            // Using username as ID for simplicity in this demo
             getUsersRef: () => collection(db, 'artifacts', appId, 'public', 'data', 'users'),
             getUserDoc: (username) => doc(db, 'artifacts', appId, 'public', 'data', 'users', username),
 
             submitAuth: async () => {
-                if (!window.app.user) return; // Must be anon auth first
+                if (!window.app.user) return; 
                 const u = document.getElementById('inp-user').value.trim();
                 const p = document.getElementById('inp-pass').value.trim();
                 const m = document.getElementById('login-msg');
@@ -442,7 +435,7 @@
                             window.app.closeLogin();
                             window.game.updateMenuUI();
                         } else {
-                            m.innerText = "Usuario o contraseña incorrectos";
+                            m.innerText = "Error: Usuario/Pass";
                         }
                     } else {
                         if(snap.exists()) {
@@ -461,7 +454,7 @@
 
             logout: () => {
                 window.app.realUser = null;
-                localStorage.removeItem('clashy_user_session'); // Clear session
+                localStorage.removeItem('clashy_user_session');
                 window.location.reload();
             },
 
@@ -485,8 +478,7 @@
                 localStorage.setItem('clashy_matches', window.app.matchesPlayed);
                 localStorage.setItem('clashy_skin', window.app.currentSkin);
                 if(window.app.realUser) {
-                    localStorage.setItem('clashy_user_session', window.app.realUser.username); // Simple session persistance
-                    // Sync to DB
+                    localStorage.setItem('clashy_user_session', window.app.realUser.username);
                     setDoc(window.app.getUserDoc(window.app.realUser.username), { 
                         trophies: window.app.trophies, 
                         skin: window.app.currentSkin 
@@ -532,7 +524,6 @@
             },
             saveSkin: () => { window.app.saveLocal(); document.getElementById('modal-skins').classList.add('hidden'); document.getElementById('menu-avatar-display').innerText = window.app.currentSkin; },
 
-            // MULTIPLAYER (BETA) - Uses same structure but under matches collection
             showLobby: () => { document.getElementById('screen-lobby').classList.remove('hidden'); document.getElementById('create-room-code').value = Math.random().toString(36).substring(7).toUpperCase(); },
         };
 
@@ -568,7 +559,6 @@
                     if(data.status === 'playing') {
                         document.getElementById('screen-lobby').classList.add('hidden');
                         if(!game.state) game.startOnline(data);
-                        // Simplified sync logic would go here
                     }
                 });
             }
@@ -589,7 +579,7 @@
                     btns: { atk: document.getElementById('btn-attack'), def: document.getElementById('btn-defend'), rel: document.getElementById('btn-reload') }
                 };
                 this.updateMenuUI();
-                const l = document.getElementById('app-loader'); l.style.opacity='0'; setTimeout(()=>l.style.display='none',500);
+                const l = document.getElementById('app-loader'); l.classList.add('loader-hidden'); setTimeout(()=>l.style.display='none',500);
             },
 
             updateMenuUI() {
@@ -631,7 +621,6 @@
                     this.updateUI();
                     this.loops = setInterval(() => this.loop(), 50);
                     if(this.mode === 'local') {
-                        // Slow AI curve
                         let speed = 2000;
                         if(window.app.trophies > 50) speed = 1000;
                         if(window.app.trophies > 200) speed = 600;
@@ -712,7 +701,7 @@
                 this.state.active = false;
                 clearInterval(this.loops); clearInterval(this.aiInt);
                 this.dom.gameCont.classList.replace('zoom-in','zoom-out');
-                
+
                 const gain = win ? 30 : -10;
                 window.app.trophies = Math.max(0, window.app.trophies + gain);
                 window.app.matchesPlayed++;
@@ -753,15 +742,19 @@
             }
         };
 
-        // --- AUTH INIT ---
-        // 1. Silent Anon Auth to enable Firestore Access
+        // --- AUTH INIT & TIMEOUT ---
+        // Safety timeout in case Firebase is blocked
+        setTimeout(() => {
+            if(document.getElementById('app-loader').style.display !== 'none') {
+                console.log("Firebase timeout, starting offline...");
+                game.init();
+            }
+        }, 3000);
+
         signInAnonymously(auth).then(userCred => {
-            // Check if there is a session stored in LocalStorage (basic session persistence)
             const savedUser = localStorage.getItem('clashy_user_session');
             if(savedUser) {
-                // Try to "auto-login" with the mock profile
-                window.app.getUserDoc(savedUser); 
-                // In a real app we'd verify token, here we trust local for UX speed + firestore verify on action
+                window.app.getUserDoc(savedUser);
                 getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', savedUser)).then(s => {
                     if(s.exists()) {
                         window.app.realUser = s.data();
@@ -773,6 +766,9 @@
             } else {
                 game.init();
             }
+        }).catch(e => {
+            console.error("Auth Error", e);
+            game.init(); // Fallback to guest
         });
         
         document.addEventListener('click', () => AudioSys.init(), {once:true});
